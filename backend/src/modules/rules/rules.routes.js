@@ -7,8 +7,8 @@ import {
   deleteRuleHandler,
   voteRuleHandler,
   removeVoteHandler,
-  acceptRuleHandler,
-  getPendingAcceptanceHandler,
+  approveRuleHandler,
+  rejectRuleHandler,
 } from './rules.controller.js';
 import {
   ruleIdParamSchema,
@@ -18,17 +18,11 @@ import {
 } from './rules.schemas.js';
 import { validateRequest } from '../../middlewares/validate.middleware.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
-import { requirePermission, requireRoomMember } from '../../middlewares/rbac.middleware.js';
+import { requirePermission } from '../../middlewares/rbac.middleware.js';
 
 const router = Router({ mergeParams: true });
 
 router.use(requireAuth);
-
-router.get(
-  '/pending-acceptance',
-  requireRoomMember(),
-  getPendingAcceptanceHandler
-);
 
 router.get(
   '/',
@@ -65,6 +59,20 @@ router.delete(
   deleteRuleHandler
 );
 
+router.patch(
+  '/:ruleId/approve',
+  validateRequest({ params: ruleIdParamSchema }),
+  requirePermission('modify_rules'),
+  approveRuleHandler
+);
+
+router.patch(
+  '/:ruleId/reject',
+  validateRequest({ params: ruleIdParamSchema }),
+  requirePermission('modify_rules'),
+  rejectRuleHandler
+);
+
 router.post(
   '/:ruleId/vote',
   validateRequest({ params: ruleIdParamSchema }),
@@ -77,13 +85,6 @@ router.delete(
   validateRequest({ params: ruleIdParamSchema }),
   requirePermission('vote_rule'),
   removeVoteHandler
-);
-
-router.post(
-  '/:ruleId/accept',
-  validateRequest({ params: ruleIdParamSchema }),
-  requireRoomMember(),
-  acceptRuleHandler
 );
 
 export default router;

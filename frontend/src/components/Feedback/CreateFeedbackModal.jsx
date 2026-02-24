@@ -19,10 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateFeedback } from "@/hooks/useFeedback";
-import { useMembers } from "@/hooks/useMembers";
 
 const FEEDBACK_TYPES = [
   { value: "issue", label: "Issue" },
@@ -34,11 +32,8 @@ export function CreateFeedbackModal() {
   const [type, setType] = useState("issue");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const createFeedback = useCreateFeedback();
-  const { data: members = [] } = useMembers();
-  const canPostAnonymously = members.length >= 3;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,12 +41,10 @@ export function CreateFeedbackModal() {
       type,
       title,
       description: description || undefined,
-      isAnonymous: canPostAnonymously && isAnonymous,
     });
     setType("issue");
     setTitle("");
     setDescription("");
-    setIsAnonymous(false);
     setOpen(false);
   };
 
@@ -105,20 +98,6 @@ export function CreateFeedbackModal() {
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-
-            {canPostAnonymously && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="anonymous" className="text-right">Anonymous</Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Checkbox
-                    id="anonymous"
-                    checked={isAnonymous}
-                    onCheckedChange={(v) => setIsAnonymous(!!v)}
-                  />
-                  <span className="text-sm text-muted-foreground">Post anonymously</span>
-                </div>
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button type="submit" disabled={createFeedback.isPending}>

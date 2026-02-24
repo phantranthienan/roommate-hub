@@ -1,5 +1,4 @@
-import { Op } from 'sequelize';
-import { HouseRule, RuleVote, RuleAcceptance } from '../../db/index.js';
+import { HouseRule, RuleVote, RoomMember } from '../../db/index.js';
 import { NotFoundError, ForbiddenError, ConflictError } from '../../errors/index.js';
 import { getRoomMember } from '../../utils/permissions.js';
 
@@ -13,6 +12,8 @@ async function listRules(roomId, filters = {}, requestingUserId) {
     requestingMemberId = member?.id ?? null;
   }
 
+  const memberCount = await getActiveMemberCount(roomId);
+
   const rules = await HouseRule.findAll({
     where,
     order: [['displayOrder', 'ASC'], ['createdAt', 'DESC']],
@@ -24,25 +25,19 @@ async function listRules(roomId, filters = {}, requestingUserId) {
       const votes = await getVoteCount(rule.id);
 
       let userVoted = false;
-      let userAccepted = false;
 
       if (requestingMemberId) {
         const vote = await RuleVote.findOne({
           where: { ruleId: rule.id, roomMemberId: requestingMemberId },
         });
         userVoted = !!vote;
-
-        const acceptance = await RuleAcceptance.findOne({
-          where: { ruleId: rule.id, roomMemberId: requestingMemberId },
-        });
-        userAccepted = !!acceptance;
       }
 
       return {
         ...plain,
         votes,
+        memberCount,
         userVoted,
-        userAccepted,
       };
     })
   );
@@ -146,64 +141,71 @@ async function removeRuleVote(roomId, ruleId, voterUserId) {
   return { votes, userVoted: false };
 }
 
-async function acceptRule(roomId, ruleId, accepterUserId) {
-  const accepterMember = await getRoomMember(accepterUserId, roomId);
-
+async function approveRule(roomId, ruleId) {
   const rule = await HouseRule.findOne({
     where: { id: ruleId, roomId },
-    attributes: ['id', 'status'],
   });
+
   if (!rule) {
     throw new NotFoundError('Rule');
   }
 
-  if (rule.status !== 'approved') {
-    throw new ForbiddenError('Can only accept approved rules');
+  if (rule.status !== 'proposed') {
+    throw new ConflictError('Only proposed rules can be approved');
   }
 
-  const existing = await RuleAcceptance.findOne({
-    where: { ruleId, roomMemberId: accepterMember.id },
-  });
+  const votes = await getVoteCount(ruleId);
+  const memberCount = await getActiveMemberCount(roomId);
+  const majorityNeeded = Math.floor(memberCount / 2) + 1;
 
-  if (existing) {
-    throw new ConflictError('You have already accepted this rule');
+  if (votes < majorityNeeded) {
+    throw new ForbiddenError(`Rule needs at least ${majorityNeeded} votes before it can be approved (currently ${votes})`);
   }
 
-  await RuleAcceptance.create({
-    ruleId,
-    roomMemberId: accepterMember.id,
-  });
+  await rule.update({ status: 'approved', approvedAt: new Date() });
 
-  return { success: true };
+  return { ...rule.get({ plain: true }), votes };
 }
 
-async function getPendingAcceptance(roomId, userId) {
-  const member = await getRoomMember(userId, roomId);
-
-  const acceptedRules = await RuleAcceptance.findAll({
-    where: { roomMemberId: member.id },
-    attributes: ['ruleId'],
+async function rejectRule(roomId, ruleId) {
+  const rule = await HouseRule.findOne({
+    where: { id: ruleId, roomId },
   });
-  const acceptedRuleIds = acceptedRules.map((a) => a.ruleId);
 
-  const where = {
-    roomId,
-    status: 'approved',
-  };
-  if (acceptedRuleIds.length > 0) {
-    where.id = { [Op.notIn]: acceptedRuleIds };
+  if (!rule) {
+    throw new NotFoundError('Rule');
   }
 
-  const pendingRules = await HouseRule.findAll({
-    where,
-    order: [['displayOrder', 'ASC']],
-  });
+  if (rule.status !== 'proposed') {
+    throw new ConflictError('Only proposed rules can be rejected');
+  }
 
-  return pendingRules.map((r) => r.get({ plain: true }));
+  // Must be at least 24h since creation
+  const hoursSinceCreation = (Date.now() - new Date(rule.createdAt).getTime()) / (1000 * 60 * 60);
+  if (hoursSinceCreation < 24) {
+    throw new ForbiddenError('Cannot reject a rule within 24 hours of creation');
+  }
+
+  // Cannot reject if votes already meet the majority threshold
+  const votes = await getVoteCount(ruleId);
+  const memberCount = await getActiveMemberCount(roomId);
+  const majorityNeeded = Math.floor(memberCount / 2) + 1;
+
+  if (votes >= majorityNeeded) {
+    throw new ForbiddenError('Cannot reject a rule that has enough votes for approval');
+  }
+
+  await rule.update({ status: 'rejected' });
+
+  return { ...rule.get({ plain: true }), votes };
 }
 
 async function getVoteCount(ruleId) {
   return RuleVote.count({ where: { ruleId } });
+}
+
+async function getActiveMemberCount(roomId) {
+  return RoomMember.count({ where: { roomId, isActive: true } });
 }
 
 export {
@@ -214,6 +216,6 @@ export {
   deleteRule,
   voteRule,
   removeRuleVote,
-  acceptRule,
-  getPendingAcceptance,
+  approveRule,
+  rejectRule,
 };

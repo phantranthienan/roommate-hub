@@ -1,5 +1,5 @@
-import { Feedback, FeedbackVote, RoomMember } from '../../db/index.js';
-import { NotFoundError, BadRequestError, ConflictError } from '../../errors/index.js';
+import { Feedback, FeedbackVote } from '../../db/index.js';
+import { NotFoundError, ConflictError } from '../../errors/index.js';
 import { getRoomMember } from '../../utils/permissions.js';
 
 async function listFeedback(roomId, filters = {}, requestingUserId) {
@@ -33,7 +33,6 @@ async function listFeedback(roomId, filters = {}, requestingUserId) {
 
       return {
         ...plain,
-        createdBy: plain.isAnonymous ? null : plain.createdBy,
         votes,
         userVoted,
       };
@@ -55,7 +54,6 @@ async function getFeedback(roomId, feedbackId) {
 
   return {
     ...plain,
-    createdBy: plain.isAnonymous ? null : plain.createdBy,
     votes,
   };
 }
@@ -63,31 +61,17 @@ async function getFeedback(roomId, feedbackId) {
 async function createFeedback(roomId, creatorUserId, input) {
   const creatorMember = await getRoomMember(creatorUserId, roomId);
 
-  if (input.isAnonymous) {
-    const memberCount = await RoomMember.count({
-      where: { roomId, isActive: true },
-    });
-
-    if (memberCount < 3) {
-      throw new BadRequestError(
-        'Anonymous feedback requires at least 3 active room members'
-      );
-    }
-  }
-
   const fb = await Feedback.create({
     roomId,
     createdBy: creatorMember.id,
     type: input.type,
     title: input.title,
     description: input.description,
-    isAnonymous: input.isAnonymous || false,
   });
 
   const plain = fb.get({ plain: true });
   return {
     ...plain,
-    createdBy: plain.isAnonymous ? null : plain.createdBy,
     votes: 0,
   };
 }

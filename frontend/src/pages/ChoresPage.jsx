@@ -21,31 +21,11 @@ export default function ChoresPage() {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="bg-transparent border-b border-border/60 rounded-none w-full justify-start h-auto p-0 gap-8">
-          <TabsTrigger
-            value="all"
-            className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-          >
-            ALL
-          </TabsTrigger>
-          <TabsTrigger
-            value="mine"
-            className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-          >
-            MY TASKS
-          </TabsTrigger>
-          <TabsTrigger
-            value="upcoming"
-            className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-          >
-            UPCOMING
-          </TabsTrigger>
-          <TabsTrigger
-            value="done"
-            className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-          >
-            COMPLETED
-          </TabsTrigger>
+        <TabsList variant="line" className="bg-transparent rounded-none w-full justify-start h-auto p-0 gap-8">
+          <TabsTrigger value="all">ALL</TabsTrigger>
+          <TabsTrigger value="mine"> MY TASKS</TabsTrigger>
+          <TabsTrigger value="upcoming"> UPCOMING</TabsTrigger>
+          <TabsTrigger value="done"> COMPLETED</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-8">

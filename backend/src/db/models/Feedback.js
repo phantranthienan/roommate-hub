@@ -37,10 +37,6 @@ Feedback.init(
       type: DataTypes.ENUM('open', 'done', 'rejected', 'archived'),
       defaultValue: 'open',
     },
-    isAnonymous: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
     closedAt: {
       type: DataTypes.DATE,
       allowNull: true,

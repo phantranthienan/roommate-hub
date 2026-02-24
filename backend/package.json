@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "npx nodemon",
     "start": "node src/index.js",
-    "db:sync": "node src/db/sync.js",
-    "db:seed": "node src/db/seed.js"
+    "db:seed": "node src/db/seed.js",
+    "db:seed:demo": "node src/db/seed-demo.js"
   },
   "keywords": [],
   "author": "",

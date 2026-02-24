@@ -9,8 +9,8 @@ import {
   deleteRule,
   voteRule,
   removeRuleVote,
-  acceptRule,
-  getPendingAcceptance,
+  approveRule,
+  rejectRule,
 } from './rules.service.js';
 
 export const listRulesHandler = asyncHandler(
@@ -82,28 +82,17 @@ export const removeVoteHandler = asyncHandler(
   }
 );
 
-export const acceptRuleHandler = asyncHandler(
+export const approveRuleHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
-    const result = await acceptRule(
-      req.params.roomId,
-      req.params.ruleId,
-      req.user.userId
-    );
+    const result = await approveRule(req.params.roomId, req.params.ruleId);
     sendSuccess(res, result);
   }
 );
 
-export const getPendingAcceptanceHandler = asyncHandler(
+export const rejectRuleHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
-    const rules = await getPendingAcceptance(req.params.roomId, req.user.userId);
-    sendSuccess(res, rules);
+    const result = await rejectRule(req.params.roomId, req.params.ruleId);
+    sendSuccess(res, result);
   }
 );
+

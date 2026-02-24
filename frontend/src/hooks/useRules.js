@@ -48,13 +48,36 @@ export function useVoteRule() {
   });
 }
 
-export function useAcceptRule() {
+export function useUnvoteRule() {
   const room = useRoomStore((s) => s.selectedRoom);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ruleId) => rulesApi.acceptRule(room?.id, ruleId),
+    mutationFn: (ruleId) => rulesApi.unvoteRule(room?.id, ruleId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rules', room?.id] });
     },
   });
 }
+
+export function useApproveRule() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId) => rulesApi.approveRule(room?.id, ruleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rules', room?.id] });
+    },
+  });
+}
+
+export function useRejectRule() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ruleId) => rulesApi.rejectRule(room?.id, ruleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rules', room?.id] });
+    },
+  });
+}
+

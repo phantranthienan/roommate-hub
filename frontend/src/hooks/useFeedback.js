@@ -14,7 +14,7 @@ export function useFeedback() {
     select: (raw) => {
       const memberMap = Object.fromEntries(members.map((m) => [m.id, m]));
       return raw.map((item) => {
-        const creator = !item.isAnonymous && item.createdBy ? memberMap[item.createdBy] : null;
+        const creator = item.createdBy ? memberMap[item.createdBy] : null;
         return {
           ...item,
           author: creator
@@ -42,6 +42,17 @@ export function useVoteFeedback() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (feedbackId) => feedbackApi.voteFeedback(room?.id, feedbackId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedback', room?.id] });
+    },
+  });
+}
+
+export function useUnvoteFeedback() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (feedbackId) => feedbackApi.unvoteFeedback(room?.id, feedbackId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedback', room?.id] });
     },

@@ -13,7 +13,8 @@ export default function SettingsPage() {
   const myMember = members.find((m) => m.userId === currentUser?.id);
   const myRole = myMember?.roleName ?? "member";
   const isOwner = myRole === "owner";
-  const isOwnerOrAdmin = isOwner || myRole === "admin";
+  const isAdmin = myRole === "admin";
+  const isOwnerOrAdmin = isOwner || isAdmin;
   const canInviteGuests = myRole !== "guest";
 
   return (
@@ -27,7 +28,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="room">
-        <TabsList className="mb-6">
+        <TabsList variant="line" className="mb-6">
           <TabsTrigger value="room">Room</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>

@@ -7,10 +7,15 @@ export const rulesApi = {
   createRule: (roomId, payload) =>
     apiClient.post(`/rooms/${roomId}/rules`, payload).then((res) => res.data),
 
-  // Backend vote API is binary (voted / not voted).
   voteRule: (roomId, ruleId) =>
     apiClient.post(`/rooms/${roomId}/rules/${ruleId}/vote`).then((res) => res.data),
 
-  acceptRule: (roomId, ruleId) =>
-    apiClient.post(`/rooms/${roomId}/rules/${ruleId}/accept`).then((res) => res.data),
+  unvoteRule: (roomId, ruleId) =>
+    apiClient.delete(`/rooms/${roomId}/rules/${ruleId}/vote`).then((res) => res.data),
+
+  approveRule: (roomId, ruleId) =>
+    apiClient.patch(`/rooms/${roomId}/rules/${ruleId}/approve`).then((res) => res.data),
+
+  rejectRule: (roomId, ruleId) =>
+    apiClient.patch(`/rooms/${roomId}/rules/${ruleId}/reject`).then((res) => res.data),
 };

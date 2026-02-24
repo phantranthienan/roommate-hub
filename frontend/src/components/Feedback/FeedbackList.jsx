@@ -1,7 +1,7 @@
 import { cn } from "@/lib/cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronUp, AlertCircle, Lightbulb, Loader2 } from "lucide-react";
-import { useFeedback, useVoteFeedback } from "@/hooks/useFeedback";
+import { useFeedback, useVoteFeedback, useUnvoteFeedback } from "@/hooks/useFeedback";
 import { useAuthStore } from "@/stores/auth.store";
 
 function getRelativeTime(dateStr) {
@@ -37,25 +37,10 @@ export function FeedbackList() {
 
   return (
     <Tabs defaultValue="open" className="w-full">
-      <TabsList className="bg-transparent border-b border-border/60 rounded-none w-full justify-start h-auto p-0 space-x-8">
-        <TabsTrigger
-          value="open"
-          className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-        >
-          ACTIVE
-        </TabsTrigger>
-        <TabsTrigger
-          value="closed"
-          className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-        >
-          RESOLVED
-        </TabsTrigger>
-        <TabsTrigger
-          value="all"
-          className="relative rounded-none bg-transparent px-0 pb-3 pt-0 text-sm text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[2px] after:bg-transparent data-[state=active]:after:bg-primary"
-        >
-          MY REPORTS
-        </TabsTrigger>
+      <TabsList variant="line" className="bg-transparent rounded-none w-full justify-start h-auto p-0 gap-8">
+        <TabsTrigger value="open">ACTIVE</TabsTrigger>
+        <TabsTrigger value="closed">RESOLVED</TabsTrigger>
+        <TabsTrigger value="all">MY REPORTS</TabsTrigger>
       </TabsList>
 
       <TabsContent value="open" className="mt-8">
@@ -73,6 +58,7 @@ export function FeedbackList() {
 
 function FeedbackItems({ items }) {
   const voteFeedback = useVoteFeedback();
+  const unvoteFeedback = useUnvoteFeedback();
 
   if (items.length === 0) {
     return (
@@ -85,11 +71,7 @@ function FeedbackItems({ items }) {
   return (
     <div className="space-y-4">
       {items.map((item) => {
-        const authorName = item.isAnonymous
-          ? "Anonymous"
-          : item.author
-          ? `${item.author.firstName} ${item.author.lastName}`
-          : "Unknown";
+        const authorName = `${item.author.firstName} ${item.author.lastName}`
 
         return (
           <div
@@ -129,7 +111,7 @@ function FeedbackItems({ items }) {
                   "transition-colors",
                   item.userVoted ? "text-primary" : "text-muted-foreground hover:text-primary"
                 )}
-                onClick={() => voteFeedback.mutate(item.id)}
+                onClick={() => item.userVoted ? unvoteFeedback.mutate(item.id) : voteFeedback.mutate(item.id)}
               >
                 <ChevronUp className="h-6 w-6" />
               </button>

@@ -1,12 +1,19 @@
 import { cn } from "@/lib/cn";
-import { BookOpen, ThumbsUp, Check, Loader2 } from "lucide-react";
-import { useRules, useVoteRule, useAcceptRule } from "@/hooks/useRules";
+import { BookOpen, ThumbsUp, Check, Shield, XCircle, Loader2 } from "lucide-react";
+import { useRules, useVoteRule, useUnvoteRule, useApproveRule, useRejectRule } from "@/hooks/useRules";
+import { useMyRole } from "@/hooks/useMembers";
 import { Button } from "@/components/ui/button";
 
-export function RuleList() {
-  const { data: rules = [], isLoading, error } = useRules();
+export function RuleList({ filter }) {
+  const { data: allRules = [], isLoading, error } = useRules();
+  const rules = filter
+    ? allRules.filter((r) => r.status === filter)
+    : allRules;
   const voteRule = useVoteRule();
-  const acceptRule = useAcceptRule();
+  const unvoteRule = useUnvoteRule();
+  const approveRuleMutation = useApproveRule();
+  const rejectRuleMutation = useRejectRule();
+  const { isOwnerOrAdmin } = useMyRole();
 
   if (isLoading) {
     return (
@@ -22,7 +29,15 @@ export function RuleList() {
   }
 
   if (rules.length === 0) {
-    return <p className="text-muted-foreground py-8 text-center">No rules yet.</p>;
+    const emptyMessage =
+      filter === "proposed"
+        ? "No proposed rules."
+        : filter === "approved"
+        ? "No approved rules."
+        : filter === "rejected"
+        ? "No rejected rules."
+        : "No rules yet.";
+    return <p className="text-muted-foreground py-8 text-center">{emptyMessage}</p>;
   }
 
   return (
@@ -72,27 +87,54 @@ export function RuleList() {
                   "flex items-center gap-1.5 transition-colors",
                   rule.userVoted ? "text-primary" : "text-muted-foreground hover:text-primary"
                 )}
-                onClick={() => voteRule.mutate(rule.id)}
+                onClick={() => rule.userVoted ? unvoteRule.mutate(rule.id) : voteRule.mutate(rule.id)}
               >
                 <ThumbsUp className="h-5 w-5" />
-                <span className="font-medium">{rule.votes}</span>
+                <span className="font-medium">
+                  {rule.votes} / {rule.memberCount ? Math.floor(rule.memberCount / 2) + 1 : '?'}
+                </span>
               </button>
+              {isOwnerOrAdmin && rule.memberCount && (() => {
+                const majorityNeeded = Math.floor(rule.memberCount / 2) + 1;
+                const hasEnoughVotes = rule.votes >= majorityNeeded;
+                const hoursSinceCreation = (Date.now() - new Date(rule.createdAt).getTime()) / (1000 * 60 * 60);
+                const past24h = hoursSinceCreation >= 24;
+
+                if (hasEnoughVotes) {
+                  return (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => approveRuleMutation.mutate(rule.id)}
+                      disabled={approveRuleMutation.isPending}
+                    >
+                      <Shield className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                  );
+                }
+                if (past24h) {
+                  return (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => rejectRuleMutation.mutate(rule.id)}
+                      disabled={rejectRuleMutation.isPending}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  );
+                }
+                return null;
+              })()}
             </div>
-          ) : rule.status === "approved" && !rule.userAccepted ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => acceptRule.mutate(rule.id)}
-              disabled={acceptRule.isPending}
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Accept
-            </Button>
-          ) : (
+          ) : rule.status === "approved" ? (
             <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center">
               <Check className="h-4 w-4 text-green-600" />
             </div>
-          )}
+          ) : null}
         </div>
       ))}
     </div>

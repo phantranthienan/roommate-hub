@@ -21,6 +21,8 @@ services:
     container_name: roommate-hub-backend
     env_file:
       - ./backend/.env
+    environment:
+      DATABASE_URL: postgres://roommate:roommate_secret@postgres:5432/roommate_hub
     ports:
       - "3000:3000"
     volumes:
