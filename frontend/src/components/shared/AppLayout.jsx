@@ -1,16 +1,14 @@
-import { Outlet, Navigate, useLocation } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { useRoomStore } from "@/stores/room.store";
-import { ErrorBoundary } from "./ErrorBoundary";
 
 export default function AppLayout() {
   const [open, setOpen] = useState(false);
   const selectedRoom = useRoomStore((s) => s.selectedRoom);
-  const location = useLocation();
 
   if (!selectedRoom) {
     return <Navigate to="/auth" replace />;
@@ -42,9 +40,7 @@ export default function AppLayout() {
       <main className="flex-1 md:ml-[60px] h-full overflow-auto">
         <div className="min-h-full flex justify-center px-8 md:px-12 lg:px-16 pt-16 md:pt-10 pb-10">
           <div className="w-full max-w-4xl">
-            <ErrorBoundary key={location.key}>
-              <Outlet />
-            </ErrorBoundary>
+            <Outlet />
           </div>
         </div>
       </main>
