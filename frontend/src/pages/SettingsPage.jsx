@@ -27,8 +27,8 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your room, members, and profile.</p>
       </div>
 
-      <Tabs defaultValue="room">
-        <TabsList variant="line" className="mb-6">
+      <Tabs defaultValue="room" className="w-full">
+        <TabsList variant="line" className="mb-6 w-full sm:w-fit bg-transparent rounded-none justify-start h-auto p-0 gap-4 sm:gap-8">
           <TabsTrigger value="room">Room</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>

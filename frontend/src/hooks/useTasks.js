@@ -59,11 +59,11 @@ export function useDeleteTask() {
   });
 }
 
-export function useUpdateTaskStatus() {
+export function useToggleComplete() {
   const room = useRoomStore((s) => s.selectedRoom);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, status }) => tasksApi.updateTaskStatus(room?.id, taskId, status),
+    mutationFn: (taskId) => tasksApi.toggleComplete(room?.id, taskId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', room?.id] });
     },

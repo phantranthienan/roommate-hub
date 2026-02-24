@@ -8,10 +8,7 @@ import {
   updateTask,
   deleteTask,
   assignTask,
-  startTask,
-  completeTask,
-  cancelTask,
-  updateTaskStatus,
+  toggleComplete,
 } from './tasks.service.js';
 
 export const listTasksHandler = asyncHandler(
@@ -64,41 +61,16 @@ export const assignTaskHandler = asyncHandler(
   }
 );
 
-export const startTaskHandler = asyncHandler(
-  async (req, res) => {
-    const task = await startTask(req.params.roomId, req.params.taskId);
-    sendSuccess(res, task);
-  }
-);
-
 export const completeTaskHandler = asyncHandler(
   async (req, res) => {
     if (!req.user) {
       throw new UnauthorizedError();
     }
 
-    const task = await completeTask(
+    const task = await toggleComplete(
       req.params.roomId,
       req.params.taskId,
       req.user.userId
-    );
-    sendSuccess(res, task);
-  }
-);
-
-export const cancelTaskHandler = asyncHandler(
-  async (req, res) => {
-    const task = await cancelTask(req.params.roomId, req.params.taskId);
-    sendSuccess(res, task);
-  }
-);
-
-export const updateTaskStatusHandler = asyncHandler(
-  async (req, res) => {
-    const task = await updateTaskStatus(
-      req.params.roomId,
-      req.params.taskId,
-      req.body.status
     );
     sendSuccess(res, task);
   }

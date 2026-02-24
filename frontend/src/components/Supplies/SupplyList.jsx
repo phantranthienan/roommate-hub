@@ -69,81 +69,71 @@ export function SupplyList() {
       />
 
       <div className="space-y-2">
-        {items.map((item) => {
-          const purchaserName = item.lastPurchaser
-            ? `${item.lastPurchaser.firstName} ${item.lastPurchaser.lastName}`
-            : null;
-
-          return (
+        {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-4 py-5 border-b border-border/40 last:border-0"
+              className="flex flex-col gap-3 py-5 border-b border-border/40 last:border-0 sm:flex-row sm:items-center"
             >
-              <div
-                className={cn(
-                  "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
-                  statusIconClass[item.status]
-                )}
-              >
-                <Package className={cn("h-5 w-5", statusPackageClass[item.status])} />
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <div
+                  className={cn(
+                    "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+                    statusIconClass[item.status]
+                  )}
+                >
+                  <Package className={cn("h-5 w-5", statusPackageClass[item.status])} />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">{item.name}</p>
+                  {item.category && (
+                    <p className="text-xs text-muted-foreground">{item.category}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="font-medium">{item.name}</p>
-                {item.category && (
-                  <p className="text-xs text-muted-foreground">{item.category}</p>
+              <div className="flex items-center gap-2 shrink-0 ml-auto flex-wrap sm:pl-2">
+                <Select
+                  value={item.status}
+                  onValueChange={(v) => handleStatusChange(item.id, v)}
+                  disabled={updateItemStatus.isPending}
+                >
+                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">In Stock</SelectItem>
+                    <SelectItem value="low">Running Low</SelectItem>
+                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {isOwnerOrAdmin && item.status !== "available" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 shrink-0"
+                    onClick={() => handleAddTask(item.name)}
+                  >
+                    <ListTodo className="h-4 w-4" />
+                    Add Task
+                  </Button>
                 )}
-                {purchaserName && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                    <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium">
-                      {purchaserName[0]}
-                    </span>
-                    <span>{purchaserName}</span>
-                  </div>
+
+                {isOwnerOrAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => deleteItem.mutate(item.id)}
+                    disabled={deleteItem.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
-
-              <Select
-                value={item.status}
-                onValueChange={(v) => handleStatusChange(item.id, v)}
-                disabled={updateItemStatus.isPending}
-              >
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="available">In Stock</SelectItem>
-                  <SelectItem value="low">Running Low</SelectItem>
-                  <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {isOwnerOrAdmin && item.status !== "available" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 shrink-0"
-                  onClick={() => handleAddTask(item.name)}
-                >
-                  <ListTodo className="h-4 w-4" />
-                  Add Task
-                </Button>
-              )}
-
-              {isOwnerOrAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteItem.mutate(item.id)}
-                  disabled={deleteItem.isPending}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
             </div>
-          );
-        })}
+        ))}
       </div>
     </>
   );

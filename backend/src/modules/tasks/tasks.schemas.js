@@ -33,12 +33,8 @@ export const assignTaskSchema = z.object({
   assignedTo: z.uuid(),
 });
 
-export const updateTaskStatusSchema = z.object({
-  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-});
-
 export const listTasksQuerySchema = z.object({
-  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).optional(),
+  status: z.enum(['pending', 'completed']).optional(),
   assignedTo: z.uuid().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   dueBefore: z.coerce.date().optional(),

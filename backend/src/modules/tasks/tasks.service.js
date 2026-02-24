@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
 import { Task, RoomMember } from '../../db/index.js';
-import { NotFoundError, BadRequestError } from '../../errors/index.js';
-import { getRoomMember } from '../../utils/permissions.js';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../../errors/index.js';
+import { getRoomMember, getUserHierarchyLevel } from '../../utils/permissions.js';
 
 async function listTasks(roomId, filters = {}) {
   const where = { roomId };
@@ -14,7 +14,11 @@ async function listTasks(roomId, filters = {}) {
 
   const result = await Task.findAll({
     where,
-    order: [['createdAt', 'DESC']],
+    order: [
+      ['dueDate', 'ASC'],
+      ['dueTime', 'ASC'],
+      ['createdAt', 'DESC'],
+    ],
   });
 
   return result.map((t) => t.get({ plain: true }));
@@ -119,57 +123,25 @@ async function assignTask(roomId, taskId, assignedToMemberId) {
   return affectedRows[0].get({ plain: true });
 }
 
-async function startTask(roomId, taskId) {
-  const [affectedCount, affectedRows] = await Task.update(
-    { status: 'in_progress', updatedAt: new Date() },
-    { where: { id: taskId, roomId, status: 'pending' }, returning: true }
-  );
-
-  if (affectedCount === 0) {
-    throw new NotFoundError('Task or task is not in pending status');
-  }
-
-  return affectedRows[0].get({ plain: true });
-}
-
-async function completeTask(roomId, taskId, completedByUserId) {
-  const completerMember = await getRoomMember(completedByUserId, roomId);
-
-  const [affectedCount, affectedRows] = await Task.update(
-    {
-      status: 'completed',
-      completedAt: new Date(),
-      completedBy: completerMember.id,
-      updatedAt: new Date(),
-    },
-    { where: { id: taskId, roomId }, returning: true }
-  );
-
-  if (affectedCount === 0) {
-    throw new NotFoundError('Task');
-  }
-
-  return affectedRows[0].get({ plain: true });
-}
-
-async function updateTaskStatus(roomId, taskId, status) {
+async function toggleComplete(roomId, taskId, userId) {
   const task = await Task.findOne({ where: { id: taskId, roomId } });
-  if (!task) throw new NotFoundError('Task not found');
-  await task.update({ status });
-  return task.get({ plain: true });
-}
+  if (!task) throw new NotFoundError('Task');
 
-async function cancelTask(roomId, taskId) {
-  const [affectedCount, affectedRows] = await Task.update(
-    { status: 'cancelled', updatedAt: new Date() },
-    { where: { id: taskId, roomId }, returning: true }
-  );
+  const member = await getRoomMember(userId, roomId);
+  const hierarchyLevel = await getUserHierarchyLevel(userId, roomId);
+  const isAdminOrAbove = hierarchyLevel >= 75;
 
-  if (affectedCount === 0) {
-    throw new NotFoundError('Task');
+  if (!isAdminOrAbove && task.assignedTo !== member.id) {
+    throw new ForbiddenError('You can only complete tasks assigned to you');
   }
 
-  return affectedRows[0].get({ plain: true });
+  if (task.status === 'completed') {
+    await task.update({ status: 'pending', completedAt: null, completedBy: null, updatedAt: new Date() });
+  } else {
+    await task.update({ status: 'completed', completedAt: new Date(), completedBy: member.id, updatedAt: new Date() });
+  }
+
+  return task.get({ plain: true });
 }
 
 export {
@@ -179,8 +151,5 @@ export {
   updateTask,
   deleteTask,
   assignTask,
-  startTask,
-  completeTask,
-  cancelTask,
-  updateTaskStatus,
+  toggleComplete,
 };

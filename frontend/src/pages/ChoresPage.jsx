@@ -7,7 +7,7 @@ export default function ChoresPage() {
   const { isOwnerOrAdmin } = useMyRole();
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <h1 className="text-4xl">
             <span className="font-light">Household</span>{" "}
@@ -23,9 +23,8 @@ export default function ChoresPage() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList variant="line" className="bg-transparent rounded-none w-full justify-start h-auto p-0 gap-8">
           <TabsTrigger value="all">ALL</TabsTrigger>
-          <TabsTrigger value="mine"> MY TASKS</TabsTrigger>
-          <TabsTrigger value="upcoming"> UPCOMING</TabsTrigger>
-          <TabsTrigger value="done"> COMPLETED</TabsTrigger>
+          <TabsTrigger value="mine">MY TASKS</TabsTrigger>
+          <TabsTrigger value="done">COMPLETED</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-8">
@@ -33,9 +32,6 @@ export default function ChoresPage() {
         </TabsContent>
         <TabsContent value="mine" className="mt-8">
           <ChoreList filter="mine" />
-        </TabsContent>
-        <TabsContent value="upcoming" className="mt-8">
-          <ChoreList filter="upcoming" />
         </TabsContent>
         <TabsContent value="done" className="mt-8">
           <ChoreList filter="done" />

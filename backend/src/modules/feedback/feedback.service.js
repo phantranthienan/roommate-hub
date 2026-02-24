@@ -1,5 +1,5 @@
 import { Feedback, FeedbackVote } from '../../db/index.js';
-import { NotFoundError, ConflictError } from '../../errors/index.js';
+import { NotFoundError, ConflictError, BadRequestError } from '../../errors/index.js';
 import { getRoomMember } from '../../utils/permissions.js';
 
 async function listFeedback(roomId, filters = {}, requestingUserId) {
@@ -85,6 +85,9 @@ async function voteFeedback(roomId, feedbackId, voterUserId) {
   if (!fb) {
     throw new NotFoundError('Feedback');
   }
+  if (fb.status !== 'open') {
+    throw new BadRequestError('Cannot vote on closed feedback');
+  }
 
   const existingVote = await FeedbackVote.findOne({
     where: { feedbackId, roomMemberId: voterMember.id },
@@ -105,6 +108,16 @@ async function voteFeedback(roomId, feedbackId, voterUserId) {
 
 async function removeVote(roomId, feedbackId, voterUserId) {
   const voterMember = await getRoomMember(voterUserId, roomId);
+
+  const fb = await Feedback.findOne({
+    where: { id: feedbackId, roomId },
+  });
+  if (!fb) {
+    throw new NotFoundError('Feedback');
+  }
+  if (fb.status !== 'open') {
+    throw new BadRequestError('Cannot change vote on closed feedback');
+  }
 
   const vote = await FeedbackVote.findOne({
     where: { feedbackId, roomMemberId: voterMember.id },

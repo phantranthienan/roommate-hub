@@ -138,29 +138,49 @@ function getRoomContext(roomDef, roomsByKey, membersByRoomAndUsername) {
 async function seedRoomScenario(roomDef, ctx, transaction) {
   const now = new Date();
 
+  // Task scenarios — each member has 1 pending + 1 completed
+  // owner:   pending (mop floors), completed (fix faucet)
+  // admin:   pending (take out recycling), completed (vacuum living room)
+  // member1: pending (clean kitchen), completed (laundry room cleanup)
+  // member2: pending (bathroom deep clean), completed (organize pantry)
+  // + 1 unassigned task, 1 overdue task
   const taskRows = await Task.bulkCreate(
     [
+      // — owner tasks —
       {
         roomId: ctx.room.id,
-        createdBy: ctx.owner.id,
-        assignedTo: ctx.member1.id,
-        title: 'Clean kitchen counters',
-        description: 'Wipe counters and stove after dinner.',
-        dueDate: isoDateWithOffset(1),
-        dueTime: '19:00:00',
-        priority: 'high',
+        createdBy: ctx.admin.id,
+        assignedTo: ctx.owner.id,
+        title: 'Mop hallway and entrance',
+        description: 'Use the new microfiber mop in the closet.',
+        dueDate: isoDateWithOffset(2),
+        dueTime: '18:00:00',
+        priority: 'medium',
         status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        createdBy: ctx.admin.id,
-        assignedTo: ctx.member2.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.owner.id,
+        title: 'Fix leaky kitchen faucet',
+        description: 'Replaced washer and tightened handle.',
+        dueDate: isoDateWithOffset(-4),
+        priority: 'high',
+        status: 'completed',
+        completedAt: addDays(now, -3),
+        completedBy: ctx.owner.id,
+      },
+      // — admin tasks —
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.admin.id,
         title: 'Take out recycling',
         description: 'Blue bin pickup is tomorrow morning.',
         dueDate: isoDateWithOffset(0),
         dueTime: '21:00:00',
         priority: 'medium',
-        status: 'in_progress',
+        status: 'pending',
       },
       {
         roomId: ctx.room.id,
@@ -175,6 +195,58 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
         completedAt: addDays(now, -1),
         completedBy: ctx.admin.id,
       },
+      // — member1 tasks —
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.member1.id,
+        title: 'Clean kitchen counters',
+        description: 'Wipe counters and stove after dinner.',
+        dueDate: isoDateWithOffset(1),
+        dueTime: '19:00:00',
+        priority: 'high',
+        status: 'pending',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.member2.id,
+        assignedTo: ctx.member1.id,
+        title: 'Laundry room cleanup',
+        description: 'Sort lost socks and clear lint around dryer.',
+        dueDate: isoDateWithOffset(-3),
+        dueTime: '17:00:00',
+        priority: 'low',
+        status: 'completed',
+        completedAt: addDays(now, -2),
+        completedBy: ctx.member1.id,
+      },
+      // — member2 tasks —
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.admin.id,
+        assignedTo: ctx.member2.id,
+        title: 'Weekly bathroom deep clean',
+        description: 'Recurring weekly rotation task.',
+        dueDate: isoDateWithOffset(1),
+        priority: 'high',
+        isRecurring: true,
+        recurrencePattern: 'weekly',
+        recurrenceEndDate: isoDateWithOffset(30),
+        status: 'pending',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.member2.id,
+        title: 'Organize pantry shelves',
+        description: 'Group items by category and check expiration dates.',
+        dueDate: isoDateWithOffset(-1),
+        priority: 'medium',
+        status: 'completed',
+        completedAt: now,
+        completedBy: ctx.member2.id,
+      },
+      // — unassigned task —
       {
         roomId: ctx.room.id,
         createdBy: ctx.owner.id,
@@ -184,38 +256,29 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
         dueDate: isoDateWithOffset(3),
         dueTime: '20:00:00',
         priority: 'medium',
-        status: 'cancelled',
-      },
-      {
-        roomId: ctx.room.id,
-        createdBy: ctx.member2.id,
-        assignedTo: ctx.member1.id,
-        title: 'Laundry room cleanup',
-        description: 'Sort lost socks and clear lint around dryer.',
-        dueDate: isoDateWithOffset(5),
-        dueTime: '17:00:00',
-        priority: 'low',
         status: 'pending',
       },
+      // — overdue task (member1, demonstrates red due label) —
       {
         roomId: ctx.room.id,
         createdBy: ctx.admin.id,
-        assignedTo: ctx.member2.id,
-        title: 'Weekly bathroom deep clean',
-        description: 'Recurring weekly rotation task.',
-        dueDate: isoDateWithOffset(-1),
-        priority: 'high',
-        isRecurring: true,
-        recurrencePattern: 'weekly',
-        recurrenceEndDate: isoDateWithOffset(30),
-        status: 'completed',
-        completedAt: now,
-        completedBy: ctx.member2.id,
+        assignedTo: ctx.member1.id,
+        title: 'Wipe down window sills',
+        description: 'Dust and wipe all bedroom and living room sills.',
+        dueDate: isoDateWithOffset(-2),
+        dueTime: '15:00:00',
+        priority: 'low',
+        status: 'pending',
       },
     ],
     { returning: true, transaction }
   );
 
+  // Feedback scenarios:
+  // 0. Open issue with many votes — demonstrates resolve button for admin
+  // 1. Open suggestion with few votes — demonstrates reject button for admin
+  // 2. Done suggestion — resolved example
+  // 3. Rejected issue — rejected example
   const feedbackRows = await Feedback.bulkCreate(
     [
       {
@@ -224,6 +287,14 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
         type: 'issue',
         title: 'Wi-Fi drops at night',
         description: 'Internet disconnects around midnight for 10-15 minutes.',
+        status: 'open',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.member2.id,
+        type: 'suggestion',
+        title: 'Buy second drying rack',
+        description: 'Current rack is always occupied on weekends.',
         status: 'open',
       },
       {
@@ -244,26 +315,23 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
         status: 'rejected',
         closedAt: addDays(now, -2),
       },
-      {
-        roomId: ctx.room.id,
-        createdBy: ctx.member2.id,
-        type: 'suggestion',
-        title: 'Buy second drying rack',
-        description: 'Current rack is always occupied on weekends.',
-        status: 'open',
-      },
     ],
     { returning: true, transaction }
   );
 
   await FeedbackVote.bulkCreate(
     [
+      // Feedback 0 — open issue, 3 votes (popular, ready to resolve)
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.owner.id },
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.admin.id },
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.member2.id },
-      { feedbackId: feedbackRows[1].id, roomMemberId: ctx.owner.id },
-      { feedbackId: feedbackRows[2].id, roomMemberId: ctx.admin.id },
-      { feedbackId: feedbackRows[2].id, roomMemberId: ctx.member1.id },
+      // Feedback 1 — open suggestion, 1 vote (low traction, candidate for reject)
+      { feedbackId: feedbackRows[1].id, roomMemberId: ctx.member2.id },
+      // Feedback 2 — done, had a vote
+      { feedbackId: feedbackRows[2].id, roomMemberId: ctx.owner.id },
+      // Feedback 3 — rejected, had votes
+      { feedbackId: feedbackRows[3].id, roomMemberId: ctx.admin.id },
+      { feedbackId: feedbackRows[3].id, roomMemberId: ctx.member1.id },
     ],
     { transaction }
   );

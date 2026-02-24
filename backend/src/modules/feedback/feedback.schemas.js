@@ -12,10 +12,10 @@ export const createFeedbackSchema = z.object({
 });
 
 export const closeFeedbackSchema = z.object({
-  status: z.enum(['done', 'rejected', 'archived']),
+  status: z.enum(['done', 'rejected']),
 });
 
 export const listFeedbackQuerySchema = z.object({
   type: z.enum(['issue', 'suggestion']).optional(),
-  status: z.enum(['open', 'done', 'rejected', 'archived']).optional(),
+  status: z.enum(['open', 'done', 'rejected']).optional(),
 });

@@ -34,7 +34,7 @@ Feedback.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('open', 'done', 'rejected', 'archived'),
+      type: DataTypes.ENUM('open', 'done', 'rejected'),
       defaultValue: 'open',
     },
     closedAt: {
