@@ -15,7 +15,7 @@ import {
 } from './rules.schemas.js';
 import { validateRequest } from '../../middlewares/validate.middleware.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
-import { requirePermission } from '../../middlewares/rbac.middleware.js';
+import { requirePermission, requireRoomMember } from '../../middlewares/rbac.middleware.js';
 
 const router = Router({ mergeParams: true });
 
@@ -24,7 +24,7 @@ router.use(requireAuth);
 router.get(
   '/',
   validateRequest({ query: listRulesQuerySchema }),
-  requirePermission('view_rules'),
+  requireRoomMember(),
   listRulesHandler
 );
 

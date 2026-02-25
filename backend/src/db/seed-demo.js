@@ -13,7 +13,6 @@ import {
   FeedbackVote,
   HouseRule,
   RuleVote,
-  RuleAcceptance,
   SharedItem,
   GuestInvitation,
 } from './index.js';
@@ -87,7 +86,6 @@ const MEMBERSHIP_DEFS = [
 ];
 
 const RESET_TABLES = [
-  'rule_acceptances',
   'rule_votes',
   'feedback_votes',
   'guest_invitations',
@@ -368,21 +366,6 @@ async function seedSunriseScenario(ctx, transaction) {
     { transaction }
   );
 
-  // Rule acceptances for approved rules
-  await RuleAcceptance.bulkCreate(
-    [
-      // Rule 3 — partially accepted (2 of ~5 members)
-      { ruleId: ruleRows[3].id, roomMemberId: ctx.owner.id },
-      { ruleId: ruleRows[3].id, roomMemberId: ctx.admin.id },
-      // Rule 4 — fully accepted (all 5 active members in room)
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.owner.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.admin.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.member1.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.member2.id },
-    ],
-    { transaction }
-  );
-
   await SharedItem.bulkCreate(
     [
       { roomId: ctx.room.id, name: 'Toilet Paper', category: 'Bathroom', status: 'low' },
@@ -627,22 +610,6 @@ async function seedOakScenario(ctx, transaction) {
     { transaction }
   );
 
-  // Rule acceptances for approved rules
-  await RuleAcceptance.bulkCreate(
-    [
-      // Rule 3 — partially accepted (3 of ~5 members)
-      { ruleId: ruleRows[3].id, roomMemberId: ctx.owner.id },
-      { ruleId: ruleRows[3].id, roomMemberId: ctx.admin.id },
-      { ruleId: ruleRows[3].id, roomMemberId: ctx.member2.id },
-      // Rule 4 — fully accepted (all 5 active members in room)
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.owner.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.admin.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.member1.id },
-      { ruleId: ruleRows[4].id, roomMemberId: ctx.member2.id },
-    ],
-    { transaction }
-  );
-
   await SharedItem.bulkCreate(
     [
       { roomId: ctx.room.id, name: 'Laundry Detergent', category: 'Laundry', status: 'low' },
@@ -759,7 +726,6 @@ async function seedDemoDataset() {
       feedbackVotes: await FeedbackVote.count({ transaction }),
       rules: await HouseRule.count({ transaction }),
       ruleVotes: await RuleVote.count({ transaction }),
-      ruleAcceptances: await RuleAcceptance.count({ transaction }),
       items: await SharedItem.count({ transaction }),
     };
 

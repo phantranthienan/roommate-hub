@@ -14,7 +14,6 @@ export {
   FeedbackVote,
   HouseRule,
   RuleVote,
-  RuleAcceptance,
   SharedItem,
   GuestInvitation,
 } from './models/index.js';

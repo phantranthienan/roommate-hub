@@ -10,7 +10,6 @@ import {
   FeedbackVote,
   HouseRule,
   RuleVote,
-  RuleAcceptance,
   SharedItem,
   GuestInvitation,
 } from './models/index.js';
@@ -85,12 +84,6 @@ RuleVote.belongsTo(HouseRule, { foreignKey: 'ruleId' });
 
 RoomMember.hasMany(RuleVote, { foreignKey: 'roomMemberId', as: 'ruleVotes' });
 RuleVote.belongsTo(RoomMember, { foreignKey: 'roomMemberId', as: 'voter' });
-
-HouseRule.hasMany(RuleAcceptance, { foreignKey: 'ruleId', onDelete: 'CASCADE' });
-RuleAcceptance.belongsTo(HouseRule, { foreignKey: 'ruleId' });
-
-RoomMember.hasMany(RuleAcceptance, { foreignKey: 'roomMemberId', as: 'ruleAcceptances' });
-RuleAcceptance.belongsTo(RoomMember, { foreignKey: 'roomMemberId', as: 'member' });
 
 // rooms and shared items
 

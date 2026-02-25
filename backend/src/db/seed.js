@@ -26,14 +26,11 @@ const defaultPermissions = [
   { name: 'propose_rule', description: 'can propose new rules', category: 'rules' },
   { name: 'vote_rule', description: 'can vote on rule proposals', category: 'rules' },
   { name: 'modify_rules', description: 'can edit existing rules', category: 'rules' },
-  { name: 'view_rules', description: 'can view house rules', category: 'rules' },
   // shared items
   { name: 'add_item', description: 'can add shared items', category: 'items' },
   { name: 'update_item', description: 'can update shared items', category: 'items' },
   { name: 'delete_items', description: 'can delete shared items', category: 'items' },
-  { name: 'view_items', description: 'can view shared items', category: 'items' },
   // presence
-  { name: 'view_presence', description: 'can see member presence status', category: 'presence' },
   { name: 'update_own_presence', description: 'can update own presence status', category: 'presence' },
   // room management
   { name: 'edit_room', description: 'can edit room details', category: 'room' },
@@ -46,9 +43,9 @@ const adminPermissions = [
   'invite_guests',
   'create_task', 'update_task', 'complete_task', 'delete_task',
   'create_feedback', 'vote_feedback', 'close_feedback',
-  'propose_rule', 'vote_rule', 'modify_rules', 'view_rules',
-  'add_item', 'update_item', 'delete_items', 'view_items',
-  'view_presence', 'update_own_presence',
+  'propose_rule', 'vote_rule', 'modify_rules',
+  'add_item', 'update_item', 'delete_items',
+  'update_own_presence',
   'edit_room',
 ];
 
@@ -56,15 +53,14 @@ const memberPermissions = [
   'invite_guests',
   'complete_task',
   'create_feedback', 'vote_feedback',
-  'propose_rule', 'vote_rule', 'view_rules',
-  'update_item', 'view_items',
-  'view_presence', 'update_own_presence',
+  'propose_rule', 'vote_rule',
+  'update_item',
+  'update_own_presence',
 ];
 
 const guestPermissions = [
-  'view_rules',
-  'update_item', 'view_items',
-  'view_presence', 'update_own_presence',
+  'update_item',
+  'update_own_presence',
 ];
 
 function buildRolePermissionMappings(rolesMap, permissionsMap) {

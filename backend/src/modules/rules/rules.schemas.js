@@ -13,5 +13,5 @@ export const createRuleSchema = z.object({
 });
 
 export const listRulesQuerySchema = z.object({
-  status: z.enum(['proposed', 'approved', 'rejected', 'archived']).optional(),
+  status: z.enum(['proposed', 'approved', 'rejected']).optional(),
 });

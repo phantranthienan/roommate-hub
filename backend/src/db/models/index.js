@@ -9,7 +9,6 @@ import Feedback from './Feedback.js';
 import FeedbackVote from './FeedbackVote.js';
 import HouseRule from './HouseRule.js';
 import RuleVote from './RuleVote.js';
-import RuleAcceptance from './RuleAcceptance.js';
 import SharedItem from './SharedItem.js';
 import GuestInvitation from './GuestInvitation.js';
 
@@ -25,7 +24,6 @@ export {
   FeedbackVote,
   HouseRule,
   RuleVote,
-  RuleAcceptance,
   SharedItem,
   GuestInvitation,
 };

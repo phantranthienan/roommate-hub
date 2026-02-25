@@ -34,7 +34,7 @@ HouseRule.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('proposed', 'approved', 'rejected', 'archived'),
+      type: DataTypes.ENUM('proposed', 'approved', 'rejected'),
       defaultValue: 'proposed',
     },
     votingDeadline: {

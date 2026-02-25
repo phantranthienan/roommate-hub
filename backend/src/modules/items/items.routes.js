@@ -24,7 +24,7 @@ router.use(requireAuth);
 router.get(
   '/',
   validateRequest({ query: listItemsQuerySchema }),
-  requirePermission('view_items'),
+  requireRoomMember(),
   listItemsHandler
 );
 
