@@ -40,7 +40,6 @@ async function getRoomMembers(roomId) {
 }
 
 async function removeMember(actorUserId, roomId, memberId) {
-  // Intentionally raw SQL for role-aware target lookup with join constraints.
   const targets = await sequelize.query(
     `SELECT rm.id, rm.user_id, ro.name AS role_name
      FROM room_members rm

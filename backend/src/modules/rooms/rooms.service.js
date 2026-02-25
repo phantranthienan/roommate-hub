@@ -52,7 +52,6 @@ async function getUserRooms(userId) {
     { replacements: { userId }, type: QueryTypes.UPDATE }
   );
 
-  // Intentionally raw SQL for joined room + role projection in one query.
   const userRooms = await sequelize.query(
     `SELECT r.id, r.name, r.description, r.invite_code, r.is_active,
             r.created_at, r.updated_at, ro.name AS member_role, rm.joined_at
