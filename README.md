@@ -1,0 +1,183 @@
+# Roommate Hub
+
+A roommate management app for shared households. Manage chores, track shared supplies, propose house rules, and submit feedback
+
+## Features
+
+- **Chores**: Create, assign, and complete household tasks with due dates and priorities. 
+- **Feedback**: Submit issues or suggestions, upvote items, and resolve/reject.
+- **House Rules**: Propose rules for the household, vote on proposals, and accept approved rules.
+- **Shared Supplies**: Track household items (toilet paper, dish soap, etc.) with stock status and purchase history.
+- **Room Management**: Create rooms, invite members via invite code, manage guest invitations with expiry dates.
+- **Presence**: Members can set their home/away status.
+
+## RBAC (Role-Based Access Control)
+
+Four roles with decreasing privilege: **Owner > Admin > Member > Guest**.
+
+### Viewing
+
+All roles (including guests) can view tasks, feedback, rules, and supplies.
+
+### Chores
+
+| Action | Owner | Admin | Member | Guest |
+|---|:---:|:---:|:---:|:---:|
+| Create / edit / delete tasks | Y | Y | - | - |
+| Assign tasks to members | Y | Y | - | - |
+| Complete any task | Y | Y | - | - |
+| Complete own assigned task | Y | Y | Y | - |
+
+### Feedback
+
+| Action | Owner | Admin | Member | Guest |
+|---|:---:|:---:|:---:|:---:|
+| Submit feedback | Y | Y | Y | - |
+| Vote on feedback | Y | Y | Y | - |
+| Resolve / reject feedback | Y | Y | - | - |
+
+### House Rules
+
+| Action | Owner | Admin | Member | Guest |
+|---|:---:|:---:|:---:|:---:|
+| Propose a rule | Y | Y | Y | - |
+| Vote on proposals | Y | Y | Y | - |
+| Approve / reject rules | Y | Y | - | - |
+
+### Shared Supplies
+
+| Action | Owner | Admin | Member | Guest |
+|---|:---:|:---:|:---:|:---:|
+| Add / delete items | Y | Y | - | - |
+| Update stock status | Y | Y | Y | Y |
+
+### Room & Members
+
+| Action | Owner | Admin | Member | Guest |
+|---|:---:|:---:|:---:|:---:|
+| Edit room details | Y | Y | - | - |
+| Invite guests | Y | Y | Y | - |
+| Invite / remove members | Y | - | - | - |
+| Change member roles | Y | - | - | - |
+| Transfer ownership | Y | - | - | - |
+| Delete room | Y | - | - | - |
+
+## Quick Start
+
+### Requirements
+
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+
+### 1. Start all services
+
+**Option A: Using the run script**
+
+```bash
+./run.sh dev
+```
+
+**Option B: Using docker compose** 
+
+```bash
+docker compose up --build
+```
+
+This starts PostgreSQL, the backend (port 3000), and the frontend (port 5173).
+
+### 2. Seed demo data
+
+In a separate terminal, seed the database with demo users and data:
+
+**Option A: Using the run script**
+
+```bash
+./run.sh seed-demo
+```
+
+**Option B: Using docker compose**
+
+```bash
+docker compose exec backend npm run db:seed:demo
+```
+
+### 3. Open the app
+
+Go to [http://localhost:5173](http://localhost:5173)
+
+### 4. Log in
+
+All demo accounts share the password: **`12345678`**
+
+**Sunrise Apartment:**
+
+| Username | Role | Name |
+|---|---|---|
+| `sunrise_owner` | Owner | Alice Sun |
+| `sunrise_admin` | Admin | Brandon Ray |
+| `sunrise_member1` | Member | Chloe Hill |
+| `sunrise_member2` | Member | Daniel Park |
+
+**Oak House:**
+
+| Username | Role | Name |
+|---|---|---|
+| `oak_owner` | Owner | Evelyn Oak |
+| `oak_admin` | Admin | Felix Stone |
+| `oak_member1` | Member | Grace Woods |
+| `oak_member2` | Member | Henry Lake |
+
+**Cross-room users:**
+
+| Username | Rooms | Notes |
+|---|---|---|
+| `cross_room_member` | Sunrise (member) + Oak (member) | Same role in both rooms |
+| `sunrise_owner` | Sunrise (owner) + Oak (member) | Owner in one room, member in another |
+
+**Standalone account:**
+
+| Username | Notes |
+|---|---|
+| `guest_member` | No room membership — use to test the invite/join flow |
+
+### What the demo seeds
+
+Each room has **distinct content** (apartment vs house themes) so switching rooms shows different data.
+
+Per room:
+- 8 tasks — pending, done, unassigned, and overdue
+- 4 feedback items — 2 open (with votes), 1 resolved, 1 rejected
+- 6 house rules — proposed (with/without enough votes), approved (with acceptances), rejected
+- 5 shared supplies — mixed stock statuses
+
+### Stop / Reset
+
+**Using the run script:**
+
+```bash
+# Stop all containers
+./run.sh down
+
+# Stop and destroy database volume (full reset)
+./run.sh clean
+```
+
+**Using docker compose:**
+
+```bash
+# Stop all containers
+docker compose down
+
+# Stop and destroy database volume (full reset)
+docker compose down -v --rmi local
+```
+
+After `clean`, run `./run.sh dev` (or `docker compose up --build`) and re-seed to start fresh.
+
+### run.sh commands reference
+
+| Command | run.sh | docker compose equivalent |
+|---------|--------|---------------------------|
+| Start dev | `./run.sh dev` | `docker compose up --build` |
+| Stop | `./run.sh down` | `docker compose down` |
+| Full reset | `./run.sh clean` | `docker compose down -v --rmi local` |
+| Seed demo | `./run.sh seed-demo` | `docker compose exec backend npm run db:seed:demo` |

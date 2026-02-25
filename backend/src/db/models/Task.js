@@ -38,38 +38,9 @@ Task.init(
       type: DataTypes.DATEONLY,
       allowNull: true,
     },
-    dueTime: {
-      type: DataTypes.TIME,
-      allowNull: true,
-    },
-    priority: {
-      type: DataTypes.ENUM('low', 'medium', 'high'),
-      defaultValue: 'medium',
-    },
-    isRecurring: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    recurrencePattern: {
-      type: DataTypes.ENUM('daily', 'weekly', 'biweekly', 'monthly'),
-      allowNull: true,
-    },
-    recurrenceEndDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
     status: {
-      type: DataTypes.ENUM('pending', 'completed'),
+      type: DataTypes.ENUM('pending', 'done'),
       defaultValue: 'pending',
-    },
-    completedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    completedBy: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: { model: 'room_members', key: 'id' },
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,

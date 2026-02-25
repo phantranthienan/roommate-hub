@@ -11,7 +11,6 @@ import HouseRule from './HouseRule.js';
 import RuleVote from './RuleVote.js';
 import RuleAcceptance from './RuleAcceptance.js';
 import SharedItem from './SharedItem.js';
-import SharedItemHistory from './SharedItemHistory.js';
 import GuestInvitation from './GuestInvitation.js';
 
 export {
@@ -28,6 +27,5 @@ export {
   RuleVote,
   RuleAcceptance,
   SharedItem,
-  SharedItemHistory,
   GuestInvitation,
 };

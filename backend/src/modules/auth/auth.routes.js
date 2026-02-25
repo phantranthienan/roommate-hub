@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import {
   loginHandler,
-  meHandler,
   registerHandler,
   updateProfileHandler,
 } from './auth.controller.js';
@@ -18,8 +17,6 @@ router.post(
 );
 
 router.post('/login', validateRequest({ body: loginSchema }), loginHandler);
-
-router.get('/me', requireAuth, meHandler);
 
 router.patch(
   '/me',

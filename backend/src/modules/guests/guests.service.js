@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { GuestInvitation, RoomMember, Room, Role } from '../../db/index.js';
-import { NotFoundError, BadRequestError, ConflictError } from '../../errors/index.js';
+import { NotFoundError, BadRequestError, ConflictError, ConfigurationError } from '../../errors/index.js';
 import { getRoomMember } from '../../utils/permissions.js';
 
 async function listInvitations(roomId) {
@@ -77,7 +77,7 @@ async function acceptInvitation(guestUserId, invitationCode) {
       throw new ConflictError('You are already a member of this room');
     }
     const guestRole = await Role.findOne({ where: { name: 'guest' } });
-    if (!guestRole) throw new Error('Guest role not found. Please run database seed.');
+    if (!guestRole) throw new ConfigurationError('Guest role not found. Please run database seed.');
 
     await existingMember.update({
       isActive: true,
@@ -89,7 +89,7 @@ async function acceptInvitation(guestUserId, invitationCode) {
     const guestRole = await Role.findOne({ where: { name: 'guest' } });
 
     if (!guestRole) {
-      throw new Error('Guest role not found. Please run database seed.');
+      throw new ConfigurationError('Guest role not found. Please run database seed.');
     }
 
     await RoomMember.create({

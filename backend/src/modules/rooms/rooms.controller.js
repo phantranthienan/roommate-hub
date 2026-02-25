@@ -1,10 +1,8 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import {
   createRoom,
   getUserRooms,
-  getRoom,
   updateRoom,
   deleteRoom,
   joinRoom,
@@ -13,10 +11,6 @@ import {
 
 export const createRoomHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const room = await createRoom(req.user.userId, req.body);
     sendSuccess(res, room, 201);
   }
@@ -24,23 +18,8 @@ export const createRoomHandler = asyncHandler(
 
 export const listRoomsHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const rooms = await getUserRooms(req.user.userId);
     sendSuccess(res, rooms);
-  }
-);
-
-export const getRoomHandler = asyncHandler(
-  async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
-    const room = await getRoom(req.params.roomId, req.user.userId);
-    sendSuccess(res, room);
   }
 );
 
@@ -60,10 +39,6 @@ export const deleteRoomHandler = asyncHandler(
 
 export const joinRoomHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await joinRoom(req.user.userId, req.body.inviteCode);
     sendSuccess(res, result, 201);
   }
@@ -71,10 +46,6 @@ export const joinRoomHandler = asyncHandler(
 
 export const leaveRoomHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await leaveRoom(req.user.userId, req.params.roomId);
     sendSuccess(res, result);
   }

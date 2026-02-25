@@ -16,7 +16,6 @@ const defaultPermissions = [
   // tasks
   { name: 'create_task', description: 'can create household tasks', category: 'tasks' },
   { name: 'update_task', description: 'can update task details', category: 'tasks' },
-  { name: 'assign_task', description: 'can assign tasks to members', category: 'tasks' },
   { name: 'complete_task', description: 'can mark tasks as completed', category: 'tasks' },
   { name: 'delete_task', description: 'can delete tasks', category: 'tasks' },
   // feedback
@@ -44,7 +43,7 @@ const defaultPermissions = [
 
 const adminPermissions = [
   'invite_guests',
-  'create_task', 'update_task', 'assign_task', 'complete_task', 'delete_task',
+  'create_task', 'update_task', 'complete_task', 'delete_task',
   'create_feedback', 'vote_feedback', 'close_feedback',
   'propose_rule', 'vote_rule', 'modify_rules', 'view_rules',
   'add_item', 'update_item', 'delete_items', 'view_items',
@@ -54,7 +53,7 @@ const adminPermissions = [
 
 const memberPermissions = [
   'invite_guests',
-  'assign_task', 'complete_task',
+  'complete_task',
   'create_feedback', 'vote_feedback',
   'propose_rule', 'vote_rule', 'view_rules',
   'update_item', 'view_items',

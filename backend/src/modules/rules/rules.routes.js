@@ -1,9 +1,7 @@
 import { Router } from 'express';
 import {
   listRulesHandler,
-  getRuleHandler,
   createRuleHandler,
-  updateRuleHandler,
   deleteRuleHandler,
   voteRuleHandler,
   removeVoteHandler,
@@ -13,7 +11,6 @@ import {
 import {
   ruleIdParamSchema,
   createRuleSchema,
-  updateRuleSchema,
   listRulesQuerySchema,
 } from './rules.schemas.js';
 import { validateRequest } from '../../middlewares/validate.middleware.js';
@@ -36,20 +33,6 @@ router.post(
   validateRequest({ body: createRuleSchema }),
   requirePermission('propose_rule'),
   createRuleHandler
-);
-
-router.get(
-  '/:ruleId',
-  validateRequest({ params: ruleIdParamSchema }),
-  requirePermission('view_rules'),
-  getRuleHandler
-);
-
-router.patch(
-  '/:ruleId',
-  validateRequest({ params: ruleIdParamSchema, body: updateRuleSchema }),
-  requirePermission('modify_rules'),
-  updateRuleHandler
 );
 
 router.delete(

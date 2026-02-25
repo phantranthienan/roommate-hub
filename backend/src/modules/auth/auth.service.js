@@ -63,16 +63,6 @@ async function login(input) {
   };
 }
 
-async function getCurrentUser(userId) {
-  const user = await User.findByPk(userId);
-
-  if (!user) {
-    throw new NotFoundError('User');
-  }
-
-  return toPublicUser(user);
-}
-
 async function updateProfile(userId, input) {
   if (!input.firstName && !input.lastName && !input.avatarUrl) {
     throw new BadRequestError('No profile fields provided');
@@ -93,6 +83,5 @@ async function updateProfile(userId, input) {
 export {
   register,
   login,
-  getCurrentUser,
   updateProfile,
 };

@@ -1,14 +1,12 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import {
   listTasks,
-  getTask,
   createTask,
   updateTask,
   deleteTask,
-  assignTask,
-  toggleComplete,
+  markDone,
+  renewTask,
 } from './tasks.service.js';
 
 export const listTasksHandler = asyncHandler(
@@ -18,19 +16,8 @@ export const listTasksHandler = asyncHandler(
   }
 );
 
-export const getTaskHandler = asyncHandler(
-  async (req, res) => {
-    const task = await getTask(req.params.roomId, req.params.taskId);
-    sendSuccess(res, task);
-  }
-);
-
 export const createTaskHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const task = await createTask(req.params.roomId, req.user.userId, req.body);
     sendSuccess(res, task, 201);
   }
@@ -50,28 +37,20 @@ export const deleteTaskHandler = asyncHandler(
   }
 );
 
-export const assignTaskHandler = asyncHandler(
+export const markDoneHandler = asyncHandler(
   async (req, res) => {
-    const task = await assignTask(
+    const task = await markDone(
       req.params.roomId,
       req.params.taskId,
-      req.body.assignedTo
+      req.user.userId
     );
     sendSuccess(res, task);
   }
 );
 
-export const completeTaskHandler = asyncHandler(
+export const renewTaskHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
-    const task = await toggleComplete(
-      req.params.roomId,
-      req.params.taskId,
-      req.user.userId
-    );
+    const task = await renewTask(req.params.roomId, req.params.taskId, req.body);
     sendSuccess(res, task);
   }
 );

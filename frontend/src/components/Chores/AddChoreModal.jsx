@@ -39,7 +39,6 @@ export function AddChoreModal({ open: openProp, onOpenChange: onOpenChangeProp, 
 
   const [title, setTitle] = useState(initialTitle ?? "");
   const [assignedTo, setAssignedTo] = useState("");
-  const [priority, setPriority] = useState("medium");
   const [date, setDate] = useState(undefined);
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -57,7 +56,6 @@ export function AddChoreModal({ open: openProp, onOpenChange: onOpenChangeProp, 
   const resetForm = () => {
     setTitle("");
     setAssignedTo("");
-    setPriority("medium");
     setDate(undefined);
     setShowCalendar(false);
   };
@@ -78,7 +76,6 @@ export function AddChoreModal({ open: openProp, onOpenChange: onOpenChangeProp, 
     await createTask.mutateAsync({
       title,
       assignedTo: assignedTo || undefined,
-      priority,
       dueDate: date ? toISODate(date) : undefined,
     });
     handleOpenChange(false);
@@ -131,20 +128,6 @@ export function AddChoreModal({ open: openProp, onOpenChange: onOpenChangeProp, 
                         {m.firstName} {m.lastName}
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Priority</Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
                 </SelectContent>
               </Select>
             </div>

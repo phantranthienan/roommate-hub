@@ -45,3 +45,14 @@ export function useRemoveMember() {
     },
   });
 }
+
+export function useTransferOwnership() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (newOwnerId) => membersApi.transferOwnership(room?.id, newOwnerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members', room?.id] });
+    },
+  });
+}

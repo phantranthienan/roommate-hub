@@ -1,6 +1,5 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import {
   getRoomMembers,
   removeMember,
@@ -17,10 +16,6 @@ export const listMembersHandler = asyncHandler(
 
 export const removeMemberHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await removeMember(
       req.user.userId,
       req.params.roomId,
@@ -32,10 +27,6 @@ export const removeMemberHandler = asyncHandler(
 
 export const changeRoleHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await changeMemberRole(
       req.user.userId,
       req.params.roomId,
@@ -48,10 +39,6 @@ export const changeRoleHandler = asyncHandler(
 
 export const transferOwnershipHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await transferOwnership(
       req.user.userId,
       req.params.roomId,

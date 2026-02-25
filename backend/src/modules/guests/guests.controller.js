@@ -1,6 +1,5 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import {
   listInvitations,
   createInvitation,
@@ -17,10 +16,6 @@ export const listInvitationsHandler = asyncHandler(
 
 export const createInvitationHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const invitation = await createInvitation(
       req.params.roomId,
       req.user.userId,
@@ -42,10 +37,6 @@ export const revokeInvitationHandler = asyncHandler(
 
 export const acceptInvitationHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await acceptInvitation(req.user.userId, req.body.invitationCode);
     sendSuccess(res, result);
   }

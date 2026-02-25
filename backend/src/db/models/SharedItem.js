@@ -28,15 +28,6 @@ SharedItem.init(
       type: DataTypes.ENUM('available', 'low', 'out_of_stock'),
       defaultValue: 'available',
     },
-    lastPurchasedBy: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: { model: 'room_members', key: 'id' },
-    },
-    lastPurchasedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },

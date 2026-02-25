@@ -10,9 +10,6 @@ export const roomsApi = {
   joinRoom: (inviteCode) =>
     apiClient.post('/rooms/join', { inviteCode }).then((res) => res.data),
 
-  getRoom: (roomId) =>
-    apiClient.get(`/rooms/${roomId}`).then((res) => res.data),
-
   updateRoom: (roomId, payload) =>
     apiClient.patch(`/rooms/${roomId}`, payload).then((res) => res.data),
 

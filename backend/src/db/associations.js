@@ -12,7 +12,6 @@ import {
   RuleVote,
   RuleAcceptance,
   SharedItem,
-  SharedItemHistory,
   GuestInvitation,
 } from './models/index.js';
 
@@ -58,8 +57,6 @@ Task.belongsTo(RoomMember, { foreignKey: 'createdBy', as: 'creator' });
 RoomMember.hasMany(Task, { foreignKey: 'assignedTo', as: 'tasksAssigned' });
 Task.belongsTo(RoomMember, { foreignKey: 'assignedTo', as: 'assignee' });
 
-RoomMember.hasMany(Task, { foreignKey: 'completedBy', as: 'tasksCompleted' });
-Task.belongsTo(RoomMember, { foreignKey: 'completedBy', as: 'completer' });
 
 // rooms and feedback
 
@@ -99,15 +96,6 @@ RuleAcceptance.belongsTo(RoomMember, { foreignKey: 'roomMemberId', as: 'member' 
 
 Room.hasMany(SharedItem, { foreignKey: 'roomId', onDelete: 'CASCADE' });
 SharedItem.belongsTo(Room, { foreignKey: 'roomId' });
-
-RoomMember.hasMany(SharedItem, { foreignKey: 'lastPurchasedBy', as: 'itemsPurchased' });
-SharedItem.belongsTo(RoomMember, { foreignKey: 'lastPurchasedBy', as: 'lastPurchaser' });
-
-SharedItem.hasMany(SharedItemHistory, { foreignKey: 'itemId', onDelete: 'CASCADE' });
-SharedItemHistory.belongsTo(SharedItem, { foreignKey: 'itemId' });
-
-RoomMember.hasMany(SharedItemHistory, { foreignKey: 'purchasedBy', as: 'purchaseHistory' });
-SharedItemHistory.belongsTo(RoomMember, { foreignKey: 'purchasedBy', as: 'purchaser' });
 
 // rooms and guest invitations
 

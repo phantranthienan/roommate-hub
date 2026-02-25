@@ -20,8 +20,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, UserMinus, UserPlus, X, Clock } from "lucide-react";
-import { useMembers, useChangeMemberRole, useRemoveMember } from "@/hooks/useMembers";
+import { Loader2, UserMinus, UserPlus, X, Clock, Crown } from "lucide-react";
+import { useMembers, useChangeMemberRole, useRemoveMember, useTransferOwnership } from "@/hooks/useMembers";
 import { useGuestInvitations, useRevokeGuestInvitation } from "@/hooks/useGuests";
 import { InviteGuestDialog } from "./InviteGuestDialog";
 import { ROLE_IDS, ASSIGNABLE_ROLES, roleBadgeVariant, getExpiryLabel } from "./settings.utils";
@@ -32,6 +32,7 @@ export function MembersTab({ isOwner, canInviteGuests, currentUserId }) {
   const { data: guestInvitations = [] } = useGuestInvitations();
   const changeMemberRole = useChangeMemberRole();
   const removeMember = useRemoveMember();
+  const transferOwnership = useTransferOwnership();
   const revokeInvitation = useRevokeGuestInvitation();
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -58,6 +59,7 @@ export function MembersTab({ isOwner, canInviteGuests, currentUserId }) {
             const isGuestMember = member.roleId === ROLE_IDS.guest;
             const canChangeRole = isOwner && !isSelf && !isOwnerMember && !isGuestMember;
             const canRemove = isOwner && !isSelf && !isOwnerMember;
+            const canTransfer = isOwner && !isSelf && !isOwnerMember && !isGuestMember;
             const firstName = member.firstName ?? "?";
             const lastName = member.lastName ?? "";
             const username = member.username ?? "";
@@ -100,6 +102,32 @@ export function MembersTab({ isOwner, canInviteGuests, currentUserId }) {
                   <Badge variant={roleBadgeVariant(member.roleName ?? "member")} className="text-xs">
                     {member.roleName ?? "member"}
                   </Badge>
+                )}
+
+                {canTransfer && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-amber-500" title="Transfer ownership" disabled={transferOwnership.isPending}>
+                        <Crown className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Transfer ownership to {firstName}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {firstName} will become the owner of this room. You will be demoted to admin. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => transferOwnership.mutate(member.id)}
+                        >
+                          Transfer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
 
                 {canRemove && (

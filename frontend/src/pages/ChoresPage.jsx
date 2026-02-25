@@ -24,7 +24,7 @@ export default function ChoresPage() {
         <TabsList variant="line" className="bg-transparent rounded-none w-full justify-start h-auto p-0 gap-8">
           <TabsTrigger value="all">ALL</TabsTrigger>
           <TabsTrigger value="mine">MY TASKS</TabsTrigger>
-          <TabsTrigger value="done">COMPLETED</TabsTrigger>
+          <TabsTrigger value="done">DONE</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-8">

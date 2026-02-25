@@ -1,22 +1,17 @@
 import { Router } from 'express';
 import {
   listItemsHandler,
-  getItemHandler,
   createItemHandler,
   updateItemHandler,
   deleteItemHandler,
   updateStatusHandler,
-  purchaseHandler,
-  getHistoryHandler,
 } from './items.controller.js';
 import {
   itemIdParamSchema,
   createItemSchema,
   updateItemSchema,
   updateStatusSchema,
-  purchaseSchema,
   listItemsQuerySchema,
-  historyQuerySchema,
 } from './items.schemas.js';
 import { validateRequest } from '../../middlewares/validate.middleware.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
@@ -40,13 +35,6 @@ router.post(
   createItemHandler
 );
 
-router.get(
-  '/:itemId',
-  validateRequest({ params: itemIdParamSchema }),
-  requirePermission('view_items'),
-  getItemHandler
-);
-
 router.patch(
   '/:itemId',
   validateRequest({ params: itemIdParamSchema, body: updateItemSchema }),
@@ -66,20 +54,6 @@ router.patch(
   validateRequest({ params: itemIdParamSchema, body: updateStatusSchema }),
   requireRoomMember(),
   updateStatusHandler
-);
-
-router.post(
-  '/:itemId/purchase',
-  validateRequest({ params: itemIdParamSchema, body: purchaseSchema }),
-  requireRoomMember(),
-  purchaseHandler
-);
-
-router.get(
-  '/:itemId/history',
-  validateRequest({ params: itemIdParamSchema, query: historyQuerySchema }),
-  requirePermission('view_items'),
-  getHistoryHandler
 );
 
 export default router;

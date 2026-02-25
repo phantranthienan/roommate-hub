@@ -9,4 +9,7 @@ export const membersApi = {
 
   removeMember: (roomId, memberId) =>
     apiClient.delete(`/rooms/${roomId}/members/${memberId}`).then((res) => res.data),
+
+  transferOwnership: (roomId, newOwnerId) =>
+    apiClient.post(`/rooms/${roomId}/members/transfer-ownership`, { newOwnerId }).then((res) => res.data),
 };

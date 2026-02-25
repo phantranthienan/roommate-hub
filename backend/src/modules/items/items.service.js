@@ -1,6 +1,5 @@
-import { SharedItem, SharedItemHistory, RoomMember } from '../../db/index.js';
+import { SharedItem } from '../../db/index.js';
 import { NotFoundError } from '../../errors/index.js';
-import { getRoomMember } from '../../utils/permissions.js';
 
 async function listItems(roomId, filters = {}) {
   const where = { roomId };
@@ -13,18 +12,6 @@ async function listItems(roomId, filters = {}) {
   });
 
   return items.map((i) => i.get({ plain: true }));
-}
-
-async function getItem(roomId, itemId) {
-  const item = await SharedItem.findOne({
-    where: { id: itemId, roomId },
-  });
-
-  if (!item) {
-    throw new NotFoundError('Item');
-  }
-
-  return item.get({ plain: true });
 }
 
 async function createItem(roomId, input) {
@@ -74,66 +61,10 @@ async function updateItemStatus(roomId, itemId, status) {
   return affectedRows[0].get({ plain: true });
 }
 
-async function recordPurchase(roomId, itemId, purchaserUserId, input) {
-  const purchaserMember = await getRoomMember(purchaserUserId, roomId);
-
-  const item = await SharedItem.findOne({
-    where: { id: itemId, roomId },
-  });
-  if (!item) {
-    throw new NotFoundError('Item');
-  }
-
-  const history = await SharedItemHistory.create({
-    itemId,
-    purchasedBy: purchaserMember.id,
-    quantity: input.quantity || 1,
-    price: input.price?.toString(),
-    currency: input.currency || 'EUR',
-    notes: input.notes,
-  });
-
-  await SharedItem.update(
-    {
-      lastPurchasedBy: purchaserMember.id,
-      lastPurchasedAt: new Date(),
-      status: 'available',
-      updatedAt: new Date(),
-    },
-    { where: { id: itemId } }
-  );
-
-  return history.get({ plain: true });
-}
-
-async function getItemHistory(roomId, itemId, limit = 10) {
-  const item = await SharedItem.findOne({
-    where: { id: itemId, roomId },
-  });
-  if (!item) {
-    throw new NotFoundError('Item');
-  }
-
-  const history = await SharedItemHistory.findAll({
-    where: { itemId },
-    attributes: [
-      'id', 'itemId', ['purchased_by', 'purchasedById'],
-      'quantity', 'price', 'currency', 'notes', 'purchasedAt',
-    ],
-    order: [['purchasedAt', 'DESC']],
-    limit,
-  });
-
-  return history.map((h) => h.get({ plain: true }));
-}
-
 export {
   listItems,
-  getItem,
   createItem,
   updateItem,
   deleteItem,
   updateItemStatus,
-  recordPurchase,
-  getItemHistory,
 };

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, ListTodo, Loader2, Trash2 } from "lucide-react";
-import { useItems, useUpdateItemStatus, useDeleteItem } from "@/hooks/useItems";
+import { Package, ListTodo, Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { useItems, useUpdateItemStatus, useDeleteItem, useUpdateItem } from "@/hooks/useItems";
 import { useMyRole } from "@/hooks/useMembers";
 import { AddChoreModal } from "@/components/Chores/AddChoreModal";
 
@@ -29,10 +30,14 @@ export function SupplyList() {
   const { data: items = [], isLoading, error } = useItems();
   const updateItemStatus = useUpdateItemStatus();
   const deleteItem = useDeleteItem();
+  const updateItem = useUpdateItem();
   const { isOwnerOrAdmin } = useMyRole();
 
   const [choreModalOpen, setChoreModalOpen] = useState(false);
   const [choreInitialTitle, setChoreInitialTitle] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   const handleAddTask = (itemName) => {
     setChoreInitialTitle(`Buy ${itemName}`);
@@ -41,6 +46,25 @@ export function SupplyList() {
 
   const handleStatusChange = (itemId, status) => {
     updateItemStatus.mutate({ itemId, status });
+  };
+
+  const startEditing = (item) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditCategory(item.category ?? "");
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditName("");
+    setEditCategory("");
+  };
+
+  const saveEdit = (itemId) => {
+    updateItem.mutate(
+      { itemId, data: { name: editName, category: editCategory || undefined } },
+      { onSuccess: () => cancelEditing() }
+    );
   };
 
   if (isLoading) {
@@ -85,9 +109,45 @@ export function SupplyList() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium">{item.name}</p>
-                  {item.category && (
-                    <p className="text-xs text-muted-foreground">{item.category}</p>
+                  {editingId === item.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="h-8 text-sm w-32"
+                        autoFocus
+                      />
+                      <Input
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        placeholder="Category"
+                        className="h-8 text-sm w-24"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-green-600"
+                        onClick={() => saveEdit(item.id)}
+                        disabled={!editName.trim() || updateItem.isPending}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={cancelEditing}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-medium">{item.name}</p>
+                      {item.category && (
+                        <p className="text-xs text-muted-foreground">{item.category}</p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -117,6 +177,17 @@ export function SupplyList() {
                   >
                     <ListTodo className="h-4 w-4" />
                     Add Task
+                  </Button>
+                )}
+
+                {isOwnerOrAdmin && editingId !== item.id && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => startEditing(item)}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 )}
 

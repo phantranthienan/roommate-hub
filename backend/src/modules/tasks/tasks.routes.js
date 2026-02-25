@@ -1,19 +1,18 @@
 import { Router } from 'express';
 import {
   listTasksHandler,
-  getTaskHandler,
   createTaskHandler,
   updateTaskHandler,
   deleteTaskHandler,
-  assignTaskHandler,
-  completeTaskHandler,
+  markDoneHandler,
+  renewTaskHandler,
 } from './tasks.controller.js';
 import {
   taskIdParamSchema,
   createTaskSchema,
   updateTaskSchema,
-  assignTaskSchema,
   listTasksQuerySchema,
+  renewTaskSchema,
 } from './tasks.schemas.js';
 import { validateRequest } from '../../middlewares/validate.middleware.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
@@ -37,13 +36,6 @@ router.post(
   createTaskHandler
 );
 
-router.get(
-  '/:taskId',
-  validateRequest({ params: taskIdParamSchema }),
-  requireRoomMember(),
-  getTaskHandler
-);
-
 router.patch(
   '/:taskId',
   validateRequest({ params: taskIdParamSchema, body: updateTaskSchema }),
@@ -52,10 +44,17 @@ router.patch(
 );
 
 router.patch(
-  '/:taskId/complete',
+  '/:taskId/done',
   validateRequest({ params: taskIdParamSchema }),
   requirePermission('complete_task'),
-  completeTaskHandler
+  markDoneHandler
+);
+
+router.patch(
+  '/:taskId/renew',
+  validateRequest({ params: taskIdParamSchema, body: renewTaskSchema }),
+  requirePermission('update_task'),
+  renewTaskHandler
 );
 
 router.delete(
@@ -63,13 +62,6 @@ router.delete(
   validateRequest({ params: taskIdParamSchema }),
   requirePermission('delete_task'),
   deleteTaskHandler
-);
-
-router.post(
-  '/:taskId/assign',
-  validateRequest({ params: taskIdParamSchema, body: assignTaskSchema }),
-  requirePermission('assign_task'),
-  assignTaskHandler
 );
 
 export default router;

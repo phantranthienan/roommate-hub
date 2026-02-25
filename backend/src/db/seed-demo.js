@@ -13,8 +13,8 @@ import {
   FeedbackVote,
   HouseRule,
   RuleVote,
+  RuleAcceptance,
   SharedItem,
-  SharedItemHistory,
   GuestInvitation,
 } from './index.js';
 import { seedDatabase } from './seed.js';
@@ -52,13 +52,13 @@ const ROOM_DEFS = [
 
 const BASE_USER_DEFS = [
   { username: 'sunrise_owner', firstName: 'Alice', lastName: 'Sun', roomKey: 'sunrise', role: 'owner', present: true },
-  { username: 'sunrise_admin', firstName: 'Brandon', lastName: 'Ray', roomKey: 'sunrise', role: 'admin', present: true },
-  { username: 'sunrise_member1', firstName: 'Chloe', lastName: 'Hill', roomKey: 'sunrise', role: 'member', present: false },
+  { username: 'sunrise_admin', firstName: 'Brandon', lastName: 'Ray', roomKey: 'sunrise', role: 'admin', present: false },
+  { username: 'sunrise_member1', firstName: 'Chloe', lastName: 'Hill', roomKey: 'sunrise', role: 'member', present: true },
   { username: 'sunrise_member2', firstName: 'Daniel', lastName: 'Park', roomKey: 'sunrise', role: 'member', present: false },
-  { username: 'oak_owner', firstName: 'Evelyn', lastName: 'Oak', roomKey: 'oak', role: 'owner', present: true },
+  { username: 'oak_owner', firstName: 'Evelyn', lastName: 'Oak', roomKey: 'oak', role: 'owner', present: false },
   { username: 'oak_admin', firstName: 'Felix', lastName: 'Stone', roomKey: 'oak', role: 'admin', present: true },
   { username: 'oak_member1', firstName: 'Grace', lastName: 'Woods', roomKey: 'oak', role: 'member', present: false },
-  { username: 'oak_member2', firstName: 'Henry', lastName: 'Lake', roomKey: 'oak', role: 'member', present: false },
+  { username: 'oak_member2', firstName: 'Henry', lastName: 'Lake', roomKey: 'oak', role: 'member', present: true },
 ];
 
 const CROSS_ROOM_USER_DEF = {
@@ -82,12 +82,14 @@ const MEMBERSHIP_DEFS = [
   })),
   { username: CROSS_ROOM_USERNAME, roomKey: 'sunrise', role: 'member', present: false },
   { username: CROSS_ROOM_USERNAME, roomKey: 'oak', role: 'member', present: false },
+  // sunrise_owner is also a regular member in oak room (owner in one room, member in another)
+  { username: 'sunrise_owner', roomKey: 'oak', role: 'member', present: false },
 ];
 
 const RESET_TABLES = [
+  'rule_acceptances',
   'rule_votes',
   'feedback_votes',
-  'shared_item_history',
   'guest_invitations',
   'tasks',
   'feedback',
@@ -135,42 +137,23 @@ function getRoomContext(roomDef, roomsByKey, membersByRoomAndUsername) {
   };
 }
 
-async function seedRoomScenario(roomDef, ctx, transaction) {
+// ---------------------------------------------------------------------------
+// Sunrise Apartment — urban apartment living theme
+// ---------------------------------------------------------------------------
+async function seedSunriseScenario(ctx, transaction) {
   const now = new Date();
 
-  // Task scenarios — each member has 1 pending + 1 completed
-  // owner:   pending (mop floors), completed (fix faucet)
-  // admin:   pending (take out recycling), completed (vacuum living room)
-  // member1: pending (clean kitchen), completed (laundry room cleanup)
-  // member2: pending (bathroom deep clean), completed (organize pantry)
-  // + 1 unassigned task, 1 overdue task
   const taskRows = await Task.bulkCreate(
     [
-      // — owner tasks —
       {
         roomId: ctx.room.id,
         createdBy: ctx.admin.id,
         assignedTo: ctx.owner.id,
-        title: 'Mop hallway and entrance',
-        description: 'Use the new microfiber mop in the closet.',
+        title: 'Clean kitchen counters',
+        description: 'Wipe down all counters with disinfectant spray.',
         dueDate: isoDateWithOffset(2),
-        dueTime: '18:00:00',
-        priority: 'medium',
         status: 'pending',
       },
-      {
-        roomId: ctx.room.id,
-        createdBy: ctx.owner.id,
-        assignedTo: ctx.owner.id,
-        title: 'Fix leaky kitchen faucet',
-        description: 'Replaced washer and tightened handle.',
-        dueDate: isoDateWithOffset(-4),
-        priority: 'high',
-        status: 'completed',
-        completedAt: addDays(now, -3),
-        completedBy: ctx.owner.id,
-      },
-      // — admin tasks —
       {
         roomId: ctx.room.id,
         createdBy: ctx.owner.id,
@@ -178,140 +161,99 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
         title: 'Take out recycling',
         description: 'Blue bin pickup is tomorrow morning.',
         dueDate: isoDateWithOffset(0),
-        dueTime: '21:00:00',
-        priority: 'medium',
         status: 'pending',
       },
       {
         roomId: ctx.room.id,
         createdBy: ctx.member1.id,
-        assignedTo: ctx.admin.id,
-        title: 'Vacuum living room',
-        description: 'Focus under sofa and TV stand.',
-        dueDate: isoDateWithOffset(-2),
-        dueTime: '18:30:00',
-        priority: 'low',
-        status: 'completed',
-        completedAt: addDays(now, -1),
-        completedBy: ctx.admin.id,
-      },
-      // — member1 tasks —
-      {
-        roomId: ctx.room.id,
-        createdBy: ctx.owner.id,
-        assignedTo: ctx.member1.id,
-        title: 'Clean kitchen counters',
-        description: 'Wipe counters and stove after dinner.',
+        assignedTo: ctx.member2.id,
+        title: 'Unclog bathroom drain',
+        description: 'Hair buildup in the shower drain — use the snake tool under the sink.',
         dueDate: isoDateWithOffset(1),
-        dueTime: '19:00:00',
-        priority: 'high',
         status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        createdBy: ctx.member2.id,
+        createdBy: ctx.owner.id,
         assignedTo: ctx.member1.id,
-        title: 'Laundry room cleanup',
-        description: 'Sort lost socks and clear lint around dryer.',
-        dueDate: isoDateWithOffset(-3),
-        dueTime: '17:00:00',
-        priority: 'low',
-        status: 'completed',
-        completedAt: addDays(now, -2),
-        completedBy: ctx.member1.id,
+        title: 'Wipe stovetop after cooking',
+        description: 'Grease splatter from last night still on the burners.',
+        dueDate: isoDateWithOffset(1),
+        status: 'pending',
       },
-      // — member2 tasks —
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.owner.id,
+        title: 'Fix leaky faucet',
+        description: 'Replaced washer and tightened handle.',
+        dueDate: isoDateWithOffset(-4),
+        status: 'done',
+      },
       {
         roomId: ctx.room.id,
         createdBy: ctx.admin.id,
-        assignedTo: ctx.member2.id,
-        title: 'Weekly bathroom deep clean',
-        description: 'Recurring weekly rotation task.',
-        dueDate: isoDateWithOffset(1),
-        priority: 'high',
-        isRecurring: true,
-        recurrencePattern: 'weekly',
-        recurrenceEndDate: isoDateWithOffset(30),
-        status: 'pending',
+        assignedTo: ctx.admin.id,
+        title: 'Set up Wi-Fi extender',
+        description: 'Installed in the hallway — coverage much better now.',
+        dueDate: isoDateWithOffset(-3),
+        status: 'done',
       },
-      {
-        roomId: ctx.room.id,
-        createdBy: ctx.owner.id,
-        assignedTo: ctx.member2.id,
-        title: 'Organize pantry shelves',
-        description: 'Group items by category and check expiration dates.',
-        dueDate: isoDateWithOffset(-1),
-        priority: 'medium',
-        status: 'completed',
-        completedAt: now,
-        completedBy: ctx.member2.id,
-      },
-      // — unassigned task —
       {
         roomId: ctx.room.id,
         createdBy: ctx.owner.id,
         assignedTo: null,
         title: 'Replace hallway light bulb',
-        description: 'Use warm white spare bulb from drawer.',
+        description: 'Use warm white spare bulb from the drawer.',
         dueDate: isoDateWithOffset(3),
-        dueTime: '20:00:00',
-        priority: 'medium',
         status: 'pending',
       },
-      // — overdue task (member1, demonstrates red due label) —
       {
         roomId: ctx.room.id,
         createdBy: ctx.admin.id,
         assignedTo: ctx.member1.id,
-        title: 'Wipe down window sills',
-        description: 'Dust and wipe all bedroom and living room sills.',
+        title: 'Scrub shower tiles',
+        description: 'Mildew building up in the corners — use the tile brush.',
         dueDate: isoDateWithOffset(-2),
-        dueTime: '15:00:00',
-        priority: 'low',
         status: 'pending',
       },
     ],
     { returning: true, transaction }
   );
 
-  // Feedback scenarios:
-  // 0. Open issue with many votes — demonstrates resolve button for admin
-  // 1. Open suggestion with few votes — demonstrates reject button for admin
-  // 2. Done suggestion — resolved example
-  // 3. Rejected issue — rejected example
   const feedbackRows = await Feedback.bulkCreate(
     [
       {
         roomId: ctx.room.id,
         createdBy: ctx.member1.id,
         type: 'issue',
-        title: 'Wi-Fi drops at night',
-        description: 'Internet disconnects around midnight for 10-15 minutes.',
+        title: 'Hot water runs out too fast',
+        description: 'By the third shower in the morning there is barely any hot water left.',
         status: 'open',
       },
       {
         roomId: ctx.room.id,
         createdBy: ctx.member2.id,
         type: 'suggestion',
-        title: 'Buy second drying rack',
-        description: 'Current rack is always occupied on weekends.',
+        title: 'Buy a shoe rack for the entrance',
+        description: 'Shoes are piling up by the front door — a rack would keep it tidy.',
         status: 'open',
       },
       {
         roomId: ctx.room.id,
         createdBy: ctx.admin.id,
         type: 'suggestion',
-        title: 'Shared calendar for chores',
-        description: 'Use one Google Calendar with recurring reminders.',
+        title: 'Get a shared Netflix account',
+        description: 'Split 4-way, comes to ~$5/person.',
         status: 'done',
         closedAt: addDays(now, -1),
       },
       {
         roomId: ctx.room.id,
         createdBy: ctx.owner.id,
-        type: 'issue',
-        title: 'Noise after 11pm',
-        description: 'Late calls in living room are disturbing sleep.',
+        type: 'suggestion',
+        title: 'Install a dishwasher',
+        description: 'Would save a lot of time on dishes.',
         status: 'rejected',
         closedAt: addDays(now, -2),
       },
@@ -321,28 +263,17 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
 
   await FeedbackVote.bulkCreate(
     [
-      // Feedback 0 — open issue, 3 votes (popular, ready to resolve)
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.owner.id },
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.admin.id },
       { feedbackId: feedbackRows[0].id, roomMemberId: ctx.member2.id },
-      // Feedback 1 — open suggestion, 1 vote (low traction, candidate for reject)
       { feedbackId: feedbackRows[1].id, roomMemberId: ctx.member2.id },
-      // Feedback 2 — done, had a vote
       { feedbackId: feedbackRows[2].id, roomMemberId: ctx.owner.id },
-      // Feedback 3 — rejected, had votes
       { feedbackId: feedbackRows[3].id, roomMemberId: ctx.admin.id },
       { feedbackId: feedbackRows[3].id, roomMemberId: ctx.member1.id },
     ],
     { transaction }
   );
 
-  // Rule scenarios (5 active members per room → majority = 3)
-  // 1. Proposed, enough votes (3), created 2 days ago → Approve button for owner/admin
-  // 2. Proposed, not enough votes (1), created 6 hours ago → no action (within 24h grace)
-  // 3. Proposed, not enough votes (1), created 3 days ago → Reject button for owner/admin
-  // 4. Approved, partially accepted → Accept button for non-accepters
-  // 5. Approved, fully accepted → green check
-  // 6. Rejected → rejected badge
   const ruleRows = await HouseRule.bulkCreate(
     [
       {
@@ -359,19 +290,19 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
       {
         roomId: ctx.room.id,
         proposedBy: ctx.member2.id,
-        title: 'Label all food in the fridge',
-        description: 'Put your name and date on any food stored in the shared fridge.',
-        category: 'cleanliness',
+        title: 'No cooking fish indoors',
+        description: 'The smell lingers for days — please use outdoor grill or order out.',
+        category: 'kitchen',
         status: 'proposed',
         displayOrder: 2,
-        createdAt: new Date(now.getTime() - 6 * 60 * 60 * 1000), // 6 hours ago
+        createdAt: new Date(now.getTime() - 6 * 60 * 60 * 1000),
       },
       {
         roomId: ctx.room.id,
         proposedBy: ctx.member1.id,
-        title: 'No shoes inside the apartment',
-        description: 'Remove shoes at the entrance to keep floors clean.',
-        category: 'cleanliness',
+        title: 'Guests must leave by midnight',
+        description: 'All guests should be out by 12 AM on weeknights.',
+        category: 'guests',
         status: 'proposed',
         displayOrder: 3,
         createdAt: addDays(now, -3),
@@ -380,8 +311,8 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
       {
         roomId: ctx.room.id,
         proposedBy: ctx.admin.id,
-        title: 'Trash schedule on Tuesdays',
-        description: 'Assigned person must take trash and recycling out every Tuesday night.',
+        title: 'Take shoes off at the door',
+        description: 'Remove shoes at the entrance to keep floors clean.',
         category: 'cleanliness',
         status: 'approved',
         displayOrder: 4,
@@ -391,9 +322,9 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
       {
         roomId: ctx.room.id,
         proposedBy: ctx.member2.id,
-        title: 'Weekly deep clean every Sunday',
-        description: 'Everyone contributes 45 minutes to deep cleaning on Sunday.',
-        category: 'cleanliness',
+        title: 'Clean up kitchen within 30 minutes after cooking',
+        description: 'Dishes, counters, and stovetop must be cleaned within 30 min.',
+        category: 'kitchen',
         status: 'approved',
         displayOrder: 5,
         createdAt: addDays(now, -7),
@@ -402,9 +333,9 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
       {
         roomId: ctx.room.id,
         proposedBy: ctx.member1.id,
-        title: 'No overnight guests on weekdays',
-        description: 'Disallow overnight guests Sunday to Thursday.',
-        category: 'guests',
+        title: 'No pets allowed',
+        description: 'Lease does not permit pets — no exceptions.',
+        category: 'general',
         status: 'rejected',
         displayOrder: 6,
         createdAt: addDays(now, -5),
@@ -437,113 +368,293 @@ async function seedRoomScenario(roomDef, ctx, transaction) {
     { transaction }
   );
 
-  const itemRows = await SharedItem.bulkCreate(
+  // Rule acceptances for approved rules
+  await RuleAcceptance.bulkCreate(
+    [
+      // Rule 3 — partially accepted (2 of ~5 members)
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.admin.id },
+      // Rule 4 — fully accepted (all 5 active members in room)
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.admin.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.member1.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.member2.id },
+    ],
+    { transaction }
+  );
+
+  await SharedItem.bulkCreate(
+    [
+      { roomId: ctx.room.id, name: 'Toilet Paper', category: 'Bathroom', status: 'low' },
+      { roomId: ctx.room.id, name: 'Dish Soap', category: 'Kitchen', status: 'available' },
+      { roomId: ctx.room.id, name: 'Milk', category: 'Fridge', status: 'out_of_stock' },
+      { roomId: ctx.room.id, name: 'Trash Bags', category: 'Cleaning', status: 'low' },
+      { roomId: ctx.room.id, name: 'Paper Towels', category: 'Kitchen', status: 'available' },
+    ],
+    { transaction }
+  );
+
+  return { tasks: taskRows.length, feedback: feedbackRows.length, rules: ruleRows.length };
+}
+
+// ---------------------------------------------------------------------------
+// Oak House — house with yard / suburban theme
+// ---------------------------------------------------------------------------
+async function seedOakScenario(ctx, transaction) {
+  const now = new Date();
+
+  const taskRows = await Task.bulkCreate(
     [
       {
         roomId: ctx.room.id,
-        name: 'Toilet Paper',
-        category: 'Bathroom',
-        status: 'low',
-        lastPurchasedBy: ctx.member1.id,
-        lastPurchasedAt: addDays(now, -3),
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.admin.id,
+        title: 'Mow the front lawn',
+        description: 'Grass is getting tall — mower is in the garage.',
+        dueDate: isoDateWithOffset(2),
+        status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        name: 'Dish Soap',
-        category: 'Kitchen',
-        status: 'available',
-        lastPurchasedBy: ctx.admin.id,
-        lastPurchasedAt: addDays(now, -1),
+        createdBy: ctx.admin.id,
+        assignedTo: ctx.owner.id,
+        title: 'Clean gutters',
+        description: 'Leaves clogging the front gutters — ladder is in the shed.',
+        dueDate: isoDateWithOffset(3),
+        status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        name: 'Milk',
-        category: 'Fridge',
-        status: 'out_of_stock',
+        createdBy: ctx.member1.id,
+        assignedTo: ctx.member2.id,
+        title: 'Wash dishes in sink',
+        description: 'Pile has been sitting since yesterday.',
+        dueDate: isoDateWithOffset(0),
+        status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        name: 'Trash Bags',
-        category: 'Cleaning',
-        status: 'low',
-        lastPurchasedBy: ctx.owner.id,
-        lastPurchasedAt: addDays(now, -5),
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.member1.id,
+        title: 'Sweep the porch',
+        description: 'Dirt and leaves tracked in from the yard.',
+        dueDate: isoDateWithOffset(1),
+        status: 'pending',
       },
       {
         roomId: ctx.room.id,
-        name: 'Sponges',
-        category: 'Kitchen',
-        status: 'available',
-        lastPurchasedBy: ctx.member2.id,
-        lastPurchasedAt: addDays(now, -2),
+        createdBy: ctx.admin.id,
+        assignedTo: ctx.admin.id,
+        title: 'Fix garage door opener',
+        description: 'Replaced the battery in the remote — working now.',
+        dueDate: isoDateWithOffset(-5),
+        status: 'done',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        assignedTo: ctx.member2.id,
+        title: 'Rake leaves in backyard',
+        description: 'Filled three bags, put them by the curb.',
+        dueDate: isoDateWithOffset(-2),
+        status: 'done',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.admin.id,
+        assignedTo: null,
+        title: 'Replace smoke detector batteries',
+        description: 'Beeping started last night — spare 9Vs in the junk drawer.',
+        dueDate: isoDateWithOffset(4),
+        status: 'pending',
+      },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.member2.id,
+        assignedTo: ctx.member1.id,
+        title: 'Water garden plants',
+        description: 'Tomatoes and herbs are wilting — water twice daily in this heat.',
+        dueDate: isoDateWithOffset(-3),
+        status: 'pending',
       },
     ],
     { returning: true, transaction }
   );
 
-  await SharedItemHistory.bulkCreate(
+  const feedbackRows = await Feedback.bulkCreate(
     [
       {
-        itemId: itemRows[0].id,
-        purchasedBy: ctx.member1.id,
-        quantity: 12,
-        price: '8.99',
-        currency: 'USD',
-        notes: 'Bulk pack from warehouse store',
-        purchasedAt: addDays(now, -3),
+        roomId: ctx.room.id,
+        createdBy: ctx.member2.id,
+        type: 'issue',
+        title: 'Garage light keeps flickering',
+        description: 'The fluorescent tube in the garage flickers every evening.',
+        status: 'open',
       },
       {
-        itemId: itemRows[1].id,
-        purchasedBy: ctx.admin.id,
-        quantity: 2,
-        price: '6.5',
-        currency: 'USD',
-        notes: 'Lemon scent',
-        purchasedAt: addDays(now, -1),
+        roomId: ctx.room.id,
+        createdBy: ctx.member1.id,
+        type: 'suggestion',
+        title: 'Start a compost bin in the backyard',
+        description: 'We throw out a lot of food scraps — composting would be easy.',
+        status: 'open',
       },
       {
-        itemId: itemRows[3].id,
-        purchasedBy: ctx.owner.id,
-        quantity: 1,
-        price: '9.25',
-        currency: 'USD',
-        notes: 'Drawstring bags 40L',
-        purchasedAt: addDays(now, -5),
+        roomId: ctx.room.id,
+        createdBy: ctx.admin.id,
+        type: 'issue',
+        title: 'Fix the mailbox latch',
+        description: 'The mailbox door keeps swinging open in the wind.',
+        status: 'done',
+        closedAt: addDays(now, -1),
       },
+      {
+        roomId: ctx.room.id,
+        createdBy: ctx.owner.id,
+        type: 'suggestion',
+        title: 'Build a fire pit',
+        description: 'Would be nice for weekend hangouts in the backyard.',
+        status: 'rejected',
+        closedAt: addDays(now, -3),
+      },
+    ],
+    { returning: true, transaction }
+  );
+
+  await FeedbackVote.bulkCreate(
+    [
+      { feedbackId: feedbackRows[0].id, roomMemberId: ctx.owner.id },
+      { feedbackId: feedbackRows[0].id, roomMemberId: ctx.member1.id },
+      { feedbackId: feedbackRows[1].id, roomMemberId: ctx.member1.id },
+      { feedbackId: feedbackRows[2].id, roomMemberId: ctx.admin.id },
+      { feedbackId: feedbackRows[3].id, roomMemberId: ctx.member2.id },
+      { feedbackId: feedbackRows[3].id, roomMemberId: ctx.member1.id },
     ],
     { transaction }
   );
 
-  await GuestInvitation.bulkCreate(
+  const ruleRows = await HouseRule.bulkCreate(
     [
       {
         roomId: ctx.room.id,
-        invitedBy: ctx.owner.id,
-        guestUsername: `${roomDef.key}-guest-active`,
-        invitationCode: `${roomDef.key.toUpperCase()}-GUEST-ACTIVE`,
-        validFrom: addDays(now, -1),
-        validUntil: addDays(now, 14),
-        isActive: true,
+        proposedBy: ctx.admin.id,
+        title: 'Lock all doors by 11 PM',
+        description: 'Front, back, and garage doors must be locked by 11 PM.',
+        category: 'safety',
+        status: 'proposed',
+        displayOrder: 1,
+        createdAt: addDays(now, -2),
+        votingDeadline: addDays(now, 5),
       },
       {
         roomId: ctx.room.id,
-        invitedBy: ctx.owner.id,
-        guestUsername: `${roomDef.key}-guest-expired`,
-        invitationCode: `${roomDef.key.toUpperCase()}-GUEST-EXPIRED`,
-        validFrom: addDays(now, -20),
-        validUntil: addDays(now, -2),
-        isActive: true,
+        proposedBy: ctx.member1.id,
+        title: 'Alternate weekly lawn mowing',
+        description: 'Rotate mowing duty each week — posted schedule on fridge.',
+        category: 'yard',
+        status: 'proposed',
+        displayOrder: 2,
+        createdAt: new Date(now.getTime() - 6 * 60 * 60 * 1000),
       },
+      {
+        roomId: ctx.room.id,
+        proposedBy: ctx.member2.id,
+        title: 'No loud music after 9 PM on weekdays',
+        description: 'Keep volume down Sun–Thu so everyone can sleep.',
+        category: 'noise',
+        status: 'proposed',
+        displayOrder: 3,
+        createdAt: addDays(now, -3),
+        votingDeadline: addDays(now, 4),
+      },
+      {
+        roomId: ctx.room.id,
+        proposedBy: ctx.owner.id,
+        title: 'Sort recycling into separate bins',
+        description: 'Paper, plastic, and glass each have their own bin in the garage.',
+        category: 'cleanliness',
+        status: 'approved',
+        displayOrder: 4,
+        createdAt: addDays(now, -10),
+        approvedAt: addDays(now, -3),
+      },
+      {
+        roomId: ctx.room.id,
+        proposedBy: ctx.admin.id,
+        title: 'Wipe muddy shoes before entering',
+        description: 'Use the mat at the back door — no mud tracked inside.',
+        category: 'cleanliness',
+        status: 'approved',
+        displayOrder: 5,
+        createdAt: addDays(now, -7),
+        approvedAt: addDays(now, -1),
+      },
+      {
+        roomId: ctx.room.id,
+        proposedBy: ctx.member1.id,
+        title: 'No parking on the driveway overnight',
+        description: 'Driveway needs to stay clear for early-morning commuters.',
+        category: 'general',
+        status: 'rejected',
+        displayOrder: 6,
+        createdAt: addDays(now, -5),
+      },
+    ],
+    { returning: true, transaction }
+  );
+
+  await RuleVote.bulkCreate(
+    [
+      // Rule 0 — proposed, 3 votes (enough) → Approve button
+      { ruleId: ruleRows[0].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[0].id, roomMemberId: ctx.member1.id },
+      { ruleId: ruleRows[0].id, roomMemberId: ctx.member2.id },
+      // Rule 1 — proposed, 1 vote, < 24h old → no action
+      { ruleId: ruleRows[1].id, roomMemberId: ctx.member1.id },
+      // Rule 2 — proposed, 1 vote, > 24h old → Reject button
+      { ruleId: ruleRows[2].id, roomMemberId: ctx.member2.id },
+      // Rule 3 — approved
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.admin.id },
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.member2.id },
+      // Rule 4 — approved
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.admin.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.member1.id },
+      // Rule 5 — rejected, had some votes
+      { ruleId: ruleRows[5].id, roomMemberId: ctx.member2.id },
     ],
     { transaction }
   );
 
-  return {
-    tasks: taskRows.length,
-    feedback: feedbackRows.length,
-    rules: ruleRows.length,
-    items: itemRows.length,
-  };
+  // Rule acceptances for approved rules
+  await RuleAcceptance.bulkCreate(
+    [
+      // Rule 3 — partially accepted (3 of ~5 members)
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.admin.id },
+      { ruleId: ruleRows[3].id, roomMemberId: ctx.member2.id },
+      // Rule 4 — fully accepted (all 5 active members in room)
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.owner.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.admin.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.member1.id },
+      { ruleId: ruleRows[4].id, roomMemberId: ctx.member2.id },
+    ],
+    { transaction }
+  );
+
+  await SharedItem.bulkCreate(
+    [
+      { roomId: ctx.room.id, name: 'Laundry Detergent', category: 'Laundry', status: 'low' },
+      { roomId: ctx.room.id, name: 'Garbage Bags', category: 'Cleaning', status: 'available' },
+      { roomId: ctx.room.id, name: 'Coffee Filters', category: 'Kitchen', status: 'out_of_stock' },
+      { roomId: ctx.room.id, name: 'Light Bulbs', category: 'General', status: 'available' },
+      { roomId: ctx.room.id, name: 'Hand Soap', category: 'Bathroom', status: 'low' },
+    ],
+    { transaction }
+  );
+
+  return { tasks: taskRows.length, feedback: feedbackRows.length, rules: ruleRows.length };
 }
 
 async function seedDemoDataset() {
@@ -624,23 +735,20 @@ async function seedDemoDataset() {
       membersByRoomAndUsername.set(mapKey, member);
     }
 
-    let scenarioTotals = {
-      tasks: 0,
-      feedback: 0,
-      rules: 0,
-      items: 0,
-    };
+    const sunriseDef = ROOM_DEFS.find((r) => r.key === 'sunrise');
+    const oakDef = ROOM_DEFS.find((r) => r.key === 'oak');
 
-    for (const roomDef of ROOM_DEFS) {
-      const ctx = getRoomContext(roomDef, roomsByKey, membersByRoomAndUsername);
-      const totals = await seedRoomScenario(roomDef, ctx, transaction);
-      scenarioTotals = {
-        tasks: scenarioTotals.tasks + totals.tasks,
-        feedback: scenarioTotals.feedback + totals.feedback,
-        rules: scenarioTotals.rules + totals.rules,
-        items: scenarioTotals.items + totals.items,
-      };
-    }
+    const sunriseCtx = getRoomContext(sunriseDef, roomsByKey, membersByRoomAndUsername);
+    const oakCtx = getRoomContext(oakDef, roomsByKey, membersByRoomAndUsername);
+
+    const sunriseTotals = await seedSunriseScenario(sunriseCtx, transaction);
+    const oakTotals = await seedOakScenario(oakCtx, transaction);
+
+    const scenarioTotals = {
+      tasks: sunriseTotals.tasks + oakTotals.tasks,
+      feedback: sunriseTotals.feedback + oakTotals.feedback,
+      rules: sunriseTotals.rules + oakTotals.rules,
+    };
 
     const counts = {
       users: await User.count({ transaction }),
@@ -651,9 +759,8 @@ async function seedDemoDataset() {
       feedbackVotes: await FeedbackVote.count({ transaction }),
       rules: await HouseRule.count({ transaction }),
       ruleVotes: await RuleVote.count({ transaction }),
+      ruleAcceptances: await RuleAcceptance.count({ transaction }),
       items: await SharedItem.count({ transaction }),
-      itemHistory: await SharedItemHistory.count({ transaction }),
-      guestInvitations: await GuestInvitation.count({ transaction }),
     };
 
     return {

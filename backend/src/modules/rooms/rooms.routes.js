@@ -2,7 +2,6 @@ import { Router } from 'express';
 import {
   createRoomHandler,
   listRoomsHandler,
-  getRoomHandler,
   updateRoomHandler,
   deleteRoomHandler,
   joinRoomHandler,
@@ -34,13 +33,6 @@ router.post('/', validateRequest({ body: createRoomSchema }), createRoomHandler)
 router.get('/', listRoomsHandler);
 
 router.post('/join', validateRequest({ body: joinRoomSchema }), joinRoomHandler);
-
-router.get(
-  '/:roomId',
-  validateRequest({ params: roomIdParamSchema }),
-  requireRoomMember(),
-  getRoomHandler
-);
 
 router.patch(
   '/:roomId',

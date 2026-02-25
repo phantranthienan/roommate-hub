@@ -40,24 +40,6 @@ async function listFeedback(roomId, filters = {}, requestingUserId) {
   );
 }
 
-async function getFeedback(roomId, feedbackId) {
-  const fb = await Feedback.findOne({
-    where: { id: feedbackId, roomId },
-  });
-
-  if (!fb) {
-    throw new NotFoundError('Feedback');
-  }
-
-  const votes = await getVoteCount(feedbackId);
-  const plain = fb.get({ plain: true });
-
-  return {
-    ...plain,
-    votes,
-  };
-}
-
 async function createFeedback(roomId, creatorUserId, input) {
   const creatorMember = await getRoomMember(creatorUserId, roomId);
 
@@ -153,7 +135,6 @@ async function getVoteCount(feedbackId) {
 
 export {
   listFeedback,
-  getFeedback,
   createFeedback,
   voteFeedback,
   removeVote,

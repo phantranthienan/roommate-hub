@@ -5,4 +5,5 @@ export {
   ForbiddenError,
   NotFoundError,
   ConflictError,
+  ConfigurationError,
 } from './app-error.js';

@@ -12,12 +12,6 @@ export const createRuleSchema = z.object({
   votingDeadline: z.coerce.date().optional(),
 });
 
-export const updateRuleSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-  description: z.string().min(1).optional(),
-  category: z.string().max(50).optional(),
-});
-
 export const listRulesQuerySchema = z.object({
   status: z.enum(['proposed', 'approved', 'rejected', 'archived']).optional(),
 });

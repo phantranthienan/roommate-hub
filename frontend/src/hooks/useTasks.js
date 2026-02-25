@@ -59,11 +59,22 @@ export function useDeleteTask() {
   });
 }
 
-export function useToggleComplete() {
+export function useMarkDone() {
   const room = useRoomStore((s) => s.selectedRoom);
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (taskId) => tasksApi.toggleComplete(room?.id, taskId),
+    mutationFn: (taskId) => tasksApi.markDone(room?.id, taskId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', room?.id] });
+    },
+  });
+}
+
+export function useRenewTask() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, data }) => tasksApi.renewTask(room?.id, taskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', room?.id] });
     },

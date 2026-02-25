@@ -1,6 +1,5 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import { getRoomPresence, updatePresence } from './presence.service.js';
 
 export const getPresenceHandler = asyncHandler(
@@ -12,10 +11,6 @@ export const getPresenceHandler = asyncHandler(
 
 export const updatePresenceHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await updatePresence(
       req.params.roomId,
       req.user.userId,

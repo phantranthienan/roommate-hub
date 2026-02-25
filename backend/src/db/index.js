@@ -16,6 +16,5 @@ export {
   RuleVote,
   RuleAcceptance,
   SharedItem,
-  SharedItemHistory,
   GuestInvitation,
 } from './models/index.js';

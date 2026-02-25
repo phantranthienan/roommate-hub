@@ -37,6 +37,7 @@ async function getRoomMembers(roomId) {
 }
 
 async function removeMember(actorUserId, roomId, memberId) {
+  // Intentionally raw SQL for role-aware target lookup with join constraints.
   const targets = await sequelize.query(
     `SELECT rm.id, rm.user_id, ro.name AS role_name
      FROM room_members rm
@@ -76,6 +77,7 @@ async function removeMember(actorUserId, roomId, memberId) {
 }
 
 async function changeMemberRole(actorUserId, roomId, memberId, newRoleId) {
+  // Intentionally raw SQL for current-role lookup before hierarchy validation.
   const targets = await sequelize.query(
     `SELECT rm.id, rm.user_id, rm.role_id AS current_role_id, ro.name AS current_role_name
      FROM room_members rm
@@ -154,10 +156,6 @@ async function transferOwnership(currentOwnerId, roomId, newOwnerId) {
       where: { name: 'admin' },
       transaction: t,
     });
-
-    if (!ownerRole || !adminRole) {
-      throw new Error('Required roles not found. Please run database seed.');
-    }
 
     const newOwnerMember = await RoomMember.findOne({
       where: { userId: newOwnerId, roomId, isActive: true },

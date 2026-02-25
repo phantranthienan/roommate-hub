@@ -1,10 +1,8 @@
 import { asyncHandler } from '../../middlewares/async-handler.js';
 import { sendSuccess } from '../../utils/response.js';
-import { UnauthorizedError } from '../../errors/index.js';
 import {
   register,
   login,
-  getCurrentUser,
   updateProfile,
 } from './auth.service.js';
 
@@ -22,21 +20,8 @@ export const loginHandler = asyncHandler(
   }
 );
 
-export const meHandler = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    throw new UnauthorizedError();
-  }
-
-  const result = await getCurrentUser(req.user.userId);
-  sendSuccess(res, result);
-});
-
 export const updateProfileHandler = asyncHandler(
   async (req, res) => {
-    if (!req.user) {
-      throw new UnauthorizedError();
-    }
-
     const result = await updateProfile(req.user.userId, req.body);
     sendSuccess(res, result);
   }

@@ -10,8 +10,11 @@ export const tasksApi = {
   updateTask: (roomId, taskId, payload) =>
     apiClient.patch(`/rooms/${roomId}/tasks/${taskId}`, payload).then((res) => res.data),
 
-  toggleComplete: (roomId, taskId) =>
-    apiClient.patch(`/rooms/${roomId}/tasks/${taskId}/complete`).then((res) => res.data),
+  markDone: (roomId, taskId) =>
+    apiClient.patch(`/rooms/${roomId}/tasks/${taskId}/done`).then((res) => res.data),
+
+  renewTask: (roomId, taskId, payload) =>
+    apiClient.patch(`/rooms/${roomId}/tasks/${taskId}/renew`, payload).then((res) => res.data),
 
   deleteTask: (roomId, taskId) =>
     apiClient.delete(`/rooms/${roomId}/tasks/${taskId}`).then((res) => res.data),

@@ -1,4 +1,3 @@
-import { Op } from 'sequelize';
 import { Task, RoomMember } from '../../db/index.js';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../../errors/index.js';
 import { getRoomMember, getUserHierarchyLevel } from '../../utils/permissions.js';
@@ -7,33 +6,16 @@ async function listTasks(roomId, filters = {}) {
   const where = { roomId };
 
   if (filters.status) where.status = filters.status;
-  if (filters.assignedTo) where.assignedTo = filters.assignedTo;
-  if (filters.priority) where.priority = filters.priority;
-  if (filters.dueBefore) where.dueDate = { ...where.dueDate, [Op.lte]: filters.dueBefore };
-  if (filters.dueAfter) where.dueDate = { ...where.dueDate, [Op.gte]: filters.dueAfter };
 
   const result = await Task.findAll({
     where,
     order: [
       ['dueDate', 'ASC'],
-      ['dueTime', 'ASC'],
       ['createdAt', 'DESC'],
     ],
   });
 
   return result.map((t) => t.get({ plain: true }));
-}
-
-async function getTask(roomId, taskId) {
-  const task = await Task.findOne({
-    where: { id: taskId, roomId },
-  });
-
-  if (!task) {
-    throw new NotFoundError('Task');
-  }
-
-  return task.get({ plain: true });
 }
 
 async function createTask(roomId, creatorUserId, input) {
@@ -58,17 +40,19 @@ async function createTask(roomId, creatorUserId, input) {
     title: input.title,
     description: input.description,
     dueDate: input.dueDate,
-    dueTime: input.dueTime,
-    priority: input.priority || 'medium',
-    isRecurring: input.isRecurring || false,
-    recurrencePattern: input.recurrencePattern,
-    recurrenceEndDate: input.recurrenceEndDate,
   });
 
   return task.get({ plain: true });
 }
 
 async function updateTask(roomId, taskId, input) {
+  const task = await Task.findOne({ where: { id: taskId, roomId } });
+  if (!task) throw new NotFoundError('Task');
+
+  if (task.status === 'done') {
+    throw new BadRequestError('Cannot update a done task. Renew it first.');
+  }
+
   if (input.assignedTo) {
     const assignee = await RoomMember.findOne({
       where: { id: input.assignedTo, roomId, isActive: true },
@@ -79,16 +63,9 @@ async function updateTask(roomId, taskId, input) {
     }
   }
 
-  const [affectedCount, affectedRows] = await Task.update(
-    { ...input, updatedAt: new Date() },
-    { where: { id: taskId, roomId }, returning: true }
-  );
+  await task.update({ ...input, updatedAt: new Date() });
 
-  if (affectedCount === 0) {
-    throw new NotFoundError('Task');
-  }
-
-  return affectedRows[0].get({ plain: true });
+  return task.get({ plain: true });
 }
 
 async function deleteTask(roomId, taskId) {
@@ -102,30 +79,13 @@ async function deleteTask(roomId, taskId) {
   return { success: true };
 }
 
-async function assignTask(roomId, taskId, assignedToMemberId) {
-  const assignee = await RoomMember.findOne({
-    where: { id: assignedToMemberId, roomId, isActive: true },
-  });
-
-  if (!assignee) {
-    throw new BadRequestError('Assignee is not a valid room member');
-  }
-
-  const [affectedCount, affectedRows] = await Task.update(
-    { assignedTo: assignedToMemberId, updatedAt: new Date() },
-    { where: { id: taskId, roomId }, returning: true }
-  );
-
-  if (affectedCount === 0) {
-    throw new NotFoundError('Task');
-  }
-
-  return affectedRows[0].get({ plain: true });
-}
-
-async function toggleComplete(roomId, taskId, userId) {
+async function markDone(roomId, taskId, userId) {
   const task = await Task.findOne({ where: { id: taskId, roomId } });
   if (!task) throw new NotFoundError('Task');
+
+  if (task.status === 'done') {
+    throw new BadRequestError('Task is already done');
+  }
 
   const member = await getRoomMember(userId, roomId);
   const hierarchyLevel = await getUserHierarchyLevel(userId, roomId);
@@ -135,21 +95,48 @@ async function toggleComplete(roomId, taskId, userId) {
     throw new ForbiddenError('You can only complete tasks assigned to you');
   }
 
-  if (task.status === 'completed') {
-    await task.update({ status: 'pending', completedAt: null, completedBy: null, updatedAt: new Date() });
-  } else {
-    await task.update({ status: 'completed', completedAt: new Date(), completedBy: member.id, updatedAt: new Date() });
+  await task.update({ status: 'done', updatedAt: new Date() });
+
+  return task.get({ plain: true });
+}
+
+async function renewTask(roomId, taskId, input) {
+  const task = await Task.findOne({ where: { id: taskId, roomId } });
+  if (!task) throw new NotFoundError('Task');
+
+  if (task.status !== 'done') {
+    throw new BadRequestError('Only done tasks can be renewed');
   }
+
+  if (input.assignedTo) {
+    const assignee = await RoomMember.findOne({
+      where: { id: input.assignedTo, roomId, isActive: true },
+    });
+    if (!assignee) {
+      throw new BadRequestError('Assignee is not a valid room member');
+    }
+  }
+
+  const updateData = {
+    status: 'pending',
+    dueDate: input.dueDate,
+    updatedAt: new Date(),
+  };
+
+  if (input.assignedTo !== undefined) {
+    updateData.assignedTo = input.assignedTo;
+  }
+
+  await task.update(updateData);
 
   return task.get({ plain: true });
 }
 
 export {
   listTasks,
-  getTask,
   createTask,
   updateTask,
   deleteTask,
-  assignTask,
-  toggleComplete,
+  markDone,
+  renewTask,
 };

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import {
   listFeedbackHandler,
-  getFeedbackHandler,
   createFeedbackHandler,
   voteHandler,
   removeVoteHandler,
@@ -33,13 +32,6 @@ router.post(
   validateRequest({ body: createFeedbackSchema }),
   requirePermission('create_feedback'),
   createFeedbackHandler
-);
-
-router.get(
-  '/:feedbackId',
-  validateRequest({ params: feedbackIdParamSchema }),
-  requireRoomMember(),
-  getFeedbackHandler
 );
 
 router.post(

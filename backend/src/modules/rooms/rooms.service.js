@@ -6,6 +6,7 @@ import {
   ConflictError,
   BadRequestError,
   ForbiddenError,
+  ConfigurationError,
 } from '../../errors/index.js';
 
 async function createRoom(userId, input) {
@@ -27,7 +28,7 @@ async function createRoom(userId, input) {
     });
 
     if (!ownerRole) {
-      throw new Error('Owner role not found. Please run database seed.');
+      throw new ConfigurationError('Owner role not found. Please run database seed.');
     }
 
     await RoomMember.create(
@@ -51,6 +52,7 @@ async function getUserRooms(userId) {
     { replacements: { userId }, type: QueryTypes.UPDATE }
   );
 
+  // Intentionally raw SQL for joined room + role projection in one query.
   const userRooms = await sequelize.query(
     `SELECT r.id, r.name, r.description, r.invite_code, r.is_active,
             r.created_at, r.updated_at, ro.name AS member_role, rm.joined_at
@@ -72,39 +74,6 @@ async function getUserRooms(userId) {
     memberRole: r.member_role,
     joinedAt: r.joined_at,
   }));
-}
-
-async function getRoom(roomId, userId) {
-  const rooms = await sequelize.query(
-    `SELECT r.id, r.name, r.description, r.invite_code, r.is_active,
-            r.created_at, r.updated_at
-     FROM rooms r
-     INNER JOIN room_members rm ON r.id = rm.room_id
-     WHERE r.id = :roomId AND rm.user_id = :userId AND rm.is_active = true
-     LIMIT 1`,
-    { replacements: { roomId, userId }, type: QueryTypes.SELECT }
-  );
-
-  if (rooms.length === 0) {
-    throw new NotFoundError('Room');
-  }
-
-  const r = rooms[0];
-
-  const memberCount = await RoomMember.count({
-    where: { roomId, isActive: true },
-  });
-
-  return {
-    id: r.id,
-    name: r.name,
-    description: r.description,
-    inviteCode: r.invite_code,
-    isActive: r.is_active,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    memberCount,
-  };
 }
 
 async function updateRoom(roomId, input) {
@@ -169,7 +138,7 @@ async function joinRoom(userId, inviteCode) {
     }
 
     const guestRole = await Role.findOne({ where: { name: 'guest' } });
-    if (!guestRole) throw new Error('Guest role not found. Please run database seed.');
+    if (!guestRole) throw new ConfigurationError('Guest role not found. Please run database seed.');
 
     if (existingMember) {
       await existingMember.update({
@@ -201,23 +170,23 @@ async function joinRoom(userId, inviteCode) {
     where: { roomId: room.id, userId },
   });
 
+  const memberRole = await Role.findOne({ where: { name: 'member' } });
+
+  if (!memberRole) {
+    throw new ConfigurationError('Member role not found. Please run database seed.');
+  }
+
   if (existingMember) {
     if (existingMember.isActive) {
       throw new ConflictError('You are already a member of this room');
     }
-    await existingMember.update({ isActive: true, joinedAt: new Date() });
+    await existingMember.update({ isActive: true, roleId: memberRole.id, joinedAt: new Date() });
 
     return {
       room: room.get({ plain: true }),
       member: existingMember.get({ plain: true }),
       pendingRules: await getPendingRules(room.id),
     };
-  }
-
-  const memberRole = await Role.findOne({ where: { name: 'member' } });
-
-  if (!memberRole) {
-    throw new Error('Member role not found. Please run database seed.');
   }
 
   const member = await RoomMember.create({
@@ -277,7 +246,6 @@ async function getPendingRules(roomId) {
 export {
   createRoom,
   getUserRooms,
-  getRoom,
   updateRoom,
   deleteRoom,
   joinRoom,
