@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
 import { useCreateRule } from "@/hooks/useRules";
 
-export function AddRuleModal() {
+export function AddRuleModal({ showTrigger = true }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -32,11 +32,13 @@ export function AddRuleModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Propose Rule
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" /> Propose Rule
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Propose New Rule</DialogTitle>

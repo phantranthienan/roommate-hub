@@ -1,7 +1,10 @@
 import { CreateFeedbackModal } from "@/components/Feedback/CreateFeedbackModal";
 import { FeedbackList } from "@/components/Feedback/FeedbackList";
+import { useMyRole } from "@/hooks/useMembers";
 
 export default function FeedbackPage() {
+  const { canParticipate } = useMyRole();
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -14,7 +17,7 @@ export default function FeedbackPage() {
             Democratic living. Report issues or vote on house proposals.
           </p>
         </div>
-        <CreateFeedbackModal />
+        <CreateFeedbackModal showTrigger={canParticipate} />
       </div>
 
       <FeedbackList />

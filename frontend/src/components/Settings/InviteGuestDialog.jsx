@@ -59,7 +59,7 @@ export function InviteGuestDialog({ open, onOpenChange }) {
             <DialogHeader>
               <DialogTitle>Invite a Guest</DialogTitle>
               <DialogDescription>
-                Generate a one-time code to share. Anyone with the code joins as a guest with read-only access.
+                Generate a one-time code to share. Guests can view room data and update supply status/presence.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>

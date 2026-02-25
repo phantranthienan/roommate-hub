@@ -16,11 +16,12 @@ export function useMyRole() {
   const currentUser = useAuthStore((s) => s.user);
   const { data: members = [] } = useMembers();
   const myMember = members.find((m) => m.userId === currentUser?.id);
-  const myRole = myMember?.roleName ?? 'member';
+  const myRole = myMember?.roleName ?? 'guest';
   return {
     myRole,
     isOwner: myRole === 'owner',
     isOwnerOrAdmin: myRole === 'owner' || myRole === 'admin',
+    canParticipate: myRole !== 'guest',
   };
 }
 

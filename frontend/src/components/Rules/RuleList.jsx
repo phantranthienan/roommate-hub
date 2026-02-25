@@ -13,7 +13,7 @@ export function RuleList({ filter }) {
   const unvoteRule = useUnvoteRule();
   const approveRuleMutation = useApproveRule();
   const rejectRuleMutation = useRejectRule();
-  const { isOwnerOrAdmin } = useMyRole();
+  const { isOwnerOrAdmin, canParticipate } = useMyRole();
 
   if (isLoading) {
     return (
@@ -121,18 +121,27 @@ export function RuleList({ filter }) {
                 }
                 return null;
               })()}
-              <button
-                className={cn(
-                  "flex items-center gap-1 transition-colors text-xs",
-                  rule.userVoted ? "text-primary" : "text-muted-foreground hover:text-primary"
-                )}
-                onClick={() => rule.userVoted ? unvoteRule.mutate(rule.id) : voteRule.mutate(rule.id)}
-              >
-                <ThumbsUp className="h-4 w-4" />
-                <span className="font-medium">
-                  {rule.votes} / {rule.memberCount ? Math.ceil(rule.memberCount / 2) : '?'}
+              {canParticipate ? (
+                <button
+                  className={cn(
+                    "flex items-center gap-1 transition-colors text-xs",
+                    rule.userVoted ? "text-primary" : "text-muted-foreground hover:text-primary"
+                  )}
+                  onClick={() => rule.userVoted ? unvoteRule.mutate(rule.id) : voteRule.mutate(rule.id)}
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  <span className="font-medium">
+                    {rule.votes} / {rule.memberCount ? Math.ceil(rule.memberCount / 2) : '?'}
+                  </span>
+                </button>
+              ) : (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <ThumbsUp className="h-4 w-4" />
+                  <span className="font-medium">
+                    {rule.votes} / {rule.memberCount ? Math.ceil(rule.memberCount / 2) : '?'}
+                  </span>
                 </span>
-              </button>
+              )}
             </div>
           ) : rule.status === "approved" ? (
             <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center">

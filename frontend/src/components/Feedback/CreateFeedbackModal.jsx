@@ -27,7 +27,7 @@ const FEEDBACK_TYPES = [
   { value: "suggestion", label: "Suggestion" },
 ];
 
-export function CreateFeedbackModal() {
+export function CreateFeedbackModal({ showTrigger = true }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState("issue");
   const [title, setTitle] = useState("");
@@ -50,11 +50,13 @@ export function CreateFeedbackModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> New Feedback
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" /> New Feedback
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create Feedback</DialogTitle>

@@ -50,7 +50,7 @@ function FeedbackItems({ items }) {
   const voteFeedback = useVoteFeedback();
   const unvoteFeedback = useUnvoteFeedback();
   const updateStatus = useUpdateFeedbackStatus();
-  const { isOwnerOrAdmin } = useMyRole();
+  const { isOwnerOrAdmin, canParticipate } = useMyRole();
 
   if (items.length === 0) {
     return (
@@ -124,7 +124,7 @@ function FeedbackItems({ items }) {
                   </Button>
                 </>
               )}
-              {item.status === "open" ? (
+              {item.status === "open" && canParticipate ? (
                 <button
                   className={cn(
                     "flex items-center gap-1 transition-colors text-xs",

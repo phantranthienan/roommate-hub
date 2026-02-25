@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const { data: members = [] } = useMembers();
 
   const myMember = members.find((m) => m.userId === currentUser?.id);
-  const myRole = myMember?.roleName ?? "member";
+  const myRole = myMember?.roleName ?? "guest";
   const isOwner = myRole === "owner";
   const isAdmin = myRole === "admin";
   const isOwnerOrAdmin = isOwner || isAdmin;

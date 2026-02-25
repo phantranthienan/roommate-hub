@@ -4,6 +4,7 @@ import {
   NotFoundError,
   BadRequestError,
   ForbiddenError,
+  ConfigurationError,
 } from '../../errors/index.js';
 import { canModifyMember, getUserHierarchyLevel } from '../../utils/permissions.js';
 
@@ -15,7 +16,9 @@ async function getRoomMembers(roomId) {
      FROM room_members rm
      INNER JOIN users u ON rm.user_id = u.id
      INNER JOIN roles ro ON rm.role_id = ro.id
-     WHERE rm.room_id = :roomId AND rm.is_active = true
+     WHERE rm.room_id = :roomId
+       AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      ORDER BY ro.hierarchy_level`,
     { replacements: { roomId }, type: QueryTypes.SELECT }
   );
@@ -42,7 +45,10 @@ async function removeMember(actorUserId, roomId, memberId) {
     `SELECT rm.id, rm.user_id, ro.name AS role_name
      FROM room_members rm
      INNER JOIN roles ro ON rm.role_id = ro.id
-     WHERE rm.id = :memberId AND rm.room_id = :roomId AND rm.is_active = true
+     WHERE rm.id = :memberId
+       AND rm.room_id = :roomId
+       AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      LIMIT 1`,
     { replacements: { memberId, roomId }, type: QueryTypes.SELECT }
   );
@@ -82,7 +88,10 @@ async function changeMemberRole(actorUserId, roomId, memberId, newRoleId) {
     `SELECT rm.id, rm.user_id, rm.role_id AS current_role_id, ro.name AS current_role_name
      FROM room_members rm
      INNER JOIN roles ro ON rm.role_id = ro.id
-     WHERE rm.id = :memberId AND rm.room_id = :roomId AND rm.is_active = true
+     WHERE rm.id = :memberId
+       AND rm.room_id = :roomId
+       AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      LIMIT 1`,
     { replacements: { memberId, roomId }, type: QueryTypes.SELECT }
   );
@@ -157,6 +166,24 @@ async function transferOwnership(currentOwnerId, roomId, newOwnerId) {
       transaction: t,
     });
 
+    const guestRole = await Role.findOne({
+      where: { name: 'guest' },
+      transaction: t,
+    });
+
+    const currentOwnerMember = await RoomMember.findOne({
+      where: { userId: currentOwnerId, roomId, roleId: ownerRole.id, isActive: true },
+      transaction: t,
+    });
+
+    if (!currentOwnerMember) {
+      throw new ForbiddenError('Only the current room owner can transfer ownership');
+    }
+
+    if (currentOwnerMember.expiresAt && currentOwnerMember.expiresAt <= new Date()) {
+      throw new ForbiddenError('Expired memberships cannot transfer ownership');
+    }
+
     const newOwnerMember = await RoomMember.findOne({
       where: { userId: newOwnerId, roomId, isActive: true },
       transaction: t,
@@ -166,10 +193,22 @@ async function transferOwnership(currentOwnerId, roomId, newOwnerId) {
       throw new NotFoundError('Target member');
     }
 
+    if (newOwnerMember.expiresAt && newOwnerMember.expiresAt <= new Date()) {
+      throw new ForbiddenError('Cannot transfer ownership to an expired member');
+    }
+
+    if (newOwnerMember.expiresAt !== null) {
+      throw new ForbiddenError('Cannot transfer ownership to temporary memberships');
+    }
+
+    if (newOwnerMember.roleId === guestRole.id) {
+      throw new ForbiddenError('Cannot transfer ownership to a guest');
+    }
+
     await RoomMember.update(
       { roleId: adminRole.id },
       {
-        where: { userId: currentOwnerId, roomId },
+        where: { id: currentOwnerMember.id },
         transaction: t,
       }
     );

@@ -55,6 +55,7 @@ export async function getUserHierarchyLevel(userId, roomId) {
      WHERE rm.user_id = :userId
        AND rm.room_id = :roomId
        AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      LIMIT 1`,
     {
       replacements: { userId, roomId },
@@ -76,6 +77,7 @@ export async function canModifyMember(actorUserId, targetMemberId, roomId) {
      WHERE rm.id = :targetMemberId
        AND rm.room_id = :roomId
        AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      LIMIT 1`,
     {
       replacements: { targetMemberId, roomId },

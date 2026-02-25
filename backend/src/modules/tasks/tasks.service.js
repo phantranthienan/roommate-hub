@@ -1,4 +1,5 @@
 import { Task, RoomMember } from '../../db/index.js';
+import { Op } from 'sequelize';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../../errors/index.js';
 import { getRoomMember, getUserHierarchyLevel } from '../../utils/permissions.js';
 
@@ -24,7 +25,12 @@ async function createTask(roomId, creatorUserId, input) {
   let assignedToMemberId;
   if (input.assignedTo) {
     const assignee = await RoomMember.findOne({
-      where: { id: input.assignedTo, roomId, isActive: true },
+      where: {
+        id: input.assignedTo,
+        roomId,
+        isActive: true,
+        [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
+      },
     });
 
     if (!assignee) {
@@ -55,7 +61,12 @@ async function updateTask(roomId, taskId, input) {
 
   if (input.assignedTo) {
     const assignee = await RoomMember.findOne({
-      where: { id: input.assignedTo, roomId, isActive: true },
+      where: {
+        id: input.assignedTo,
+        roomId,
+        isActive: true,
+        [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
+      },
     });
 
     if (!assignee) {
@@ -110,7 +121,12 @@ async function renewTask(roomId, taskId, input) {
 
   if (input.assignedTo) {
     const assignee = await RoomMember.findOne({
-      where: { id: input.assignedTo, roomId, isActive: true },
+      where: {
+        id: input.assignedTo,
+        roomId,
+        isActive: true,
+        [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
+      },
     });
     if (!assignee) {
       throw new BadRequestError('Assignee is not a valid room member');

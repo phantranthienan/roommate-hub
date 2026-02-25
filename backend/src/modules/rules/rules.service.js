@@ -81,6 +81,10 @@ async function voteRule(roomId, ruleId, voterUserId) {
     throw new NotFoundError('Rule');
   }
 
+  if (rule.status !== 'proposed') {
+    throw new ConflictError('Can only vote on proposed rules');
+  }
+
   const existingVote = await RuleVote.findOne({
     where: { ruleId, roomMemberId: voterMember.id },
   });
@@ -100,6 +104,17 @@ async function voteRule(roomId, ruleId, voterUserId) {
 
 async function removeRuleVote(roomId, ruleId, voterUserId) {
   const voterMember = await getRoomMember(voterUserId, roomId);
+
+  const rule = await HouseRule.findOne({
+    where: { id: ruleId, roomId },
+    attributes: ['id', 'status'],
+  });
+  if (!rule) {
+    throw new NotFoundError('Rule');
+  }
+  if (rule.status !== 'proposed') {
+    throw new ConflictError('Can only remove votes from proposed rules');
+  }
 
   const vote = await RuleVote.findOne({
     where: { ruleId, roomMemberId: voterMember.id },
@@ -180,7 +195,11 @@ async function getVoteCount(ruleId) {
 
 async function getActiveMemberCount(roomId) {
   const guestRole = await Role.findOne({ where: { name: 'guest' }, attributes: ['id'] });
-  const where = { roomId, isActive: true };
+  const where = {
+    roomId,
+    isActive: true,
+    [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }],
+  };
   if (guestRole) where.roleId = { [Op.ne]: guestRole.id };
   return RoomMember.count({ where });
 }

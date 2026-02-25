@@ -9,7 +9,9 @@ async function getRoomPresence(roomId) {
      FROM room_members rm
      INNER JOIN users u ON rm.user_id = u.id
      INNER JOIN roles ro ON rm.role_id = ro.id
-     WHERE rm.room_id = :roomId AND rm.is_active = true
+     WHERE rm.room_id = :roomId
+       AND rm.is_active = true
+       AND (rm.expires_at IS NULL OR rm.expires_at > NOW())
      ORDER BY u.first_name`,
     { replacements: { roomId }, type: QueryTypes.SELECT }
   );

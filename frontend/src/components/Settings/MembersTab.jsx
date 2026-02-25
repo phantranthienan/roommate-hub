@@ -121,7 +121,7 @@ export function MembersTab({ isOwner, canInviteGuests, currentUserId }) {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => transferOwnership.mutate(member.id)}
+                          onClick={() => transferOwnership.mutate(member.userId)}
                         >
                           Transfer
                         </AlertDialogAction>
@@ -168,7 +168,7 @@ export function MembersTab({ isOwner, canInviteGuests, currentUserId }) {
             <div>
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Guest Invitations</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Guests have read-only access and expire automatically.
+                Guests can view room data and update supply status/presence. Access expires automatically.
               </p>
             </div>
             <Button size="sm" variant="outline" onClick={() => setInviteOpen(true)}>

@@ -180,7 +180,12 @@ async function joinRoom(userId, inviteCode) {
     if (existingMember.isActive) {
       throw new ConflictError('You are already a member of this room');
     }
-    await existingMember.update({ isActive: true, roleId: memberRole.id, joinedAt: new Date() });
+    await existingMember.update({
+      isActive: true,
+      roleId: memberRole.id,
+      expiresAt: null,
+      joinedAt: new Date(),
+    });
 
     return {
       room: room.get({ plain: true }),

@@ -1,8 +1,11 @@
 import { AddRuleModal } from "@/components/Rules/AddRuleModal";
 import { RuleList } from "@/components/Rules/RuleList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMyRole } from "@/hooks/useMembers";
 
 export default function RulesPage() {
+  const { canParticipate } = useMyRole();
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -15,7 +18,7 @@ export default function RulesPage() {
             Agreements that keep the peace.
           </p>
         </div>
-        <AddRuleModal />
+        <AddRuleModal showTrigger={canParticipate} />
       </div>
 
       <Tabs defaultValue="proposed" className="w-full">
