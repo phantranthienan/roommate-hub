@@ -86,7 +86,7 @@ export function RuleList({ filter }) {
           {rule.status === "proposed" ? (
             <div className="flex items-center gap-2">
               {isOwnerOrAdmin && rule.memberCount && (() => {
-                const majorityNeeded = Math.floor(rule.memberCount / 2) + 1;
+                const majorityNeeded = Math.ceil(rule.memberCount / 2);
                 const hasEnoughVotes = rule.votes >= majorityNeeded;
                 const hoursSinceCreation = (Date.now() - new Date(rule.createdAt).getTime()) / (1000 * 60 * 60);
                 const past24h = hoursSinceCreation >= 24;
@@ -130,7 +130,7 @@ export function RuleList({ filter }) {
               >
                 <ThumbsUp className="h-4 w-4" />
                 <span className="font-medium">
-                  {rule.votes} / {rule.memberCount ? Math.floor(rule.memberCount / 2) + 1 : '?'}
+                  {rule.votes} / {rule.memberCount ? Math.ceil(rule.memberCount / 2) : '?'}
                 </span>
               </button>
             </div>
