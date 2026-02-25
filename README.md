@@ -63,6 +63,67 @@ All roles (including guests) can view tasks, feedback, rules, and supplies.
 | Transfer ownership | Y | - | - | - |
 | Delete room | Y | - | - | - |
 
+## Business Logic (Important Behaviors)
+
+This section describes the main domain rules enforced by the backend beyond simple CRUD.
+
+### House Rules workflow
+
+- New rules are created with status `proposed`.
+- Only users with `vote_rule` can vote.
+- One member can vote only once per rule.
+- Votes can only be added/removed while the rule is still `proposed`.
+- A rule can be approved only by users with `modify_rules`.
+- Approval requires majority: `ceil(active_non_guest_members / 2)`.
+- A rule can be rejected only if:
+  - it has been proposed for at least 24 hours, and
+  - it does not already meet the majority threshold.
+- Approved and rejected rules are terminal states (no more voting).
+
+### Tasks workflow
+
+- Only users with `create_task` can create tasks.
+- `assignedTo` must be an active member of the same room.
+- Done tasks cannot be edited directly.
+- A done task must be renewed to become `pending` again.
+- Marking a task as done:
+  - owner/admin can complete any task,
+  - member can complete only tasks assigned to them.
+- Deleting tasks requires `delete_task`.
+
+### Feedback workflow
+
+- Feedback starts with status `open`.
+- Only `create_feedback` can create feedback entries.
+- Only `vote_feedback` can vote or remove vote.
+- One member can vote only once per feedback item.
+- Votes are allowed only while feedback is `open`.
+- Closing feedback requires `close_feedback` and status must be `done` or `rejected`.
+- Closed feedback cannot be voted on anymore.
+
+### Membership and role management
+
+- Room-scoped RBAC is enforced server-side on every protected route.
+- Membership must be active and non-expired to access room resources.
+- Members cannot remove themselves using remove endpoint (must use leave).
+- Owner cannot be removed.
+- Role change restrictions:
+  - cannot change your own role,
+  - cannot promote directly to owner (use transfer ownership),
+  - cannot assign/change guest role via role change endpoint,
+  - cannot modify members at or above your hierarchy level.
+- Ownership transfer:
+  - only current owner can transfer,
+  - target must be active, non-expired, non-guest member,
+  - old owner is demoted to admin.
+
+### Guest invitations
+
+- Guest invitation codes are one-time and time-bounded.
+- Accepting an invitation assigns the `guest` role with `expiresAt = validUntil`.
+- Expired or inactive invitations are rejected.
+- Guests have limited permissions but can still access viewing/presence/supply-status flows allowed by RBAC.
+
 ## Quick Start
 
 ### Requirements
