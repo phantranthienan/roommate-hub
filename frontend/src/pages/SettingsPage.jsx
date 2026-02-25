@@ -36,7 +36,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="room">
-          <RoomTab isOwnerOrAdmin={isOwnerOrAdmin} />
+          <RoomTab isOwner={isOwner} isOwnerOrAdmin={isOwnerOrAdmin} />
         </TabsContent>
 
         <TabsContent value="members">

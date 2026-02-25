@@ -39,6 +39,7 @@ const defaultPermissions = [
   { name: 'edit_room', description: 'can edit room details', category: 'room' },
   { name: 'delete_room', description: 'can delete the room', category: 'room' },
   { name: 'transfer_ownership', description: 'can transfer room ownership', category: 'room' },
+  { name: 'rotate_invite_code', description: 'can rotate room invite code', category: 'room' },
 ];
 
 const adminPermissions = [

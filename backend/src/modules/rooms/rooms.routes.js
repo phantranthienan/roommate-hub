@@ -6,6 +6,7 @@ import {
   deleteRoomHandler,
   joinRoomHandler,
   leaveRoomHandler,
+  rotateInviteCodeHandler,
 } from './rooms.controller.js';
 import {
   createRoomSchema,
@@ -53,6 +54,13 @@ router.post(
   validateRequest({ params: roomIdParamSchema }),
   requireRoomMember(),
   leaveRoomHandler
+);
+
+router.post(
+  '/:roomId/rotate-invite-code',
+  validateRequest({ params: roomIdParamSchema }),
+  requirePermission('rotate_invite_code'),
+  rotateInviteCodeHandler
 );
 
 router.use('/:roomId/members', membersRoutes);

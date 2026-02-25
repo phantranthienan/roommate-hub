@@ -59,6 +59,7 @@ All roles (including guests) can view tasks, feedback, rules, and supplies.
 | Invite guests | Y | Y | Y | - |
 | Invite / remove members | Y | - | - | - |
 | Change member roles | Y | - | - | - |
+| Rotate invite code | Y | - | - | - |
 | Transfer ownership | Y | - | - | - |
 | Delete room | Y | - | - | - |
 

@@ -55,6 +55,19 @@ export function useDeleteRoom() {
   });
 }
 
+export function useRotateInviteCode() {
+  const room = useRoomStore((s) => s.selectedRoom);
+  const setSelectedRoom = useRoomStore((s) => s.setSelectedRoom);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => roomsApi.rotateInviteCode(room?.id),
+    onSuccess: (updatedRoom) => {
+      setSelectedRoom({ ...room, inviteCode: updatedRoom.inviteCode });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+}
+
 export function useLeaveRoom() {
   const room = useRoomStore((s) => s.selectedRoom);
   const clearRoom = useRoomStore((s) => s.clearRoom);

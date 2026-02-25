@@ -67,7 +67,7 @@ async function getUserRooms(userId) {
     id: r.id,
     name: r.name,
     description: r.description,
-    inviteCode: r.invite_code,
+    ...(r.member_role === 'owner' ? { inviteCode: r.invite_code } : {}),
     isActive: r.is_active,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -243,6 +243,21 @@ async function getPendingRules(roomId) {
   return rules.map((r) => r.get({ plain: true }));
 }
 
+async function rotateInviteCode(roomId) {
+  const inviteCode = crypto.randomBytes(6).toString('base64url').slice(0, 10);
+
+  const [affectedCount, affectedRows] = await Room.update(
+    { inviteCode, updatedAt: new Date() },
+    { where: { id: roomId }, returning: true }
+  );
+
+  if (affectedCount === 0) {
+    throw new NotFoundError('Room');
+  }
+
+  return affectedRows[0].get({ plain: true });
+}
+
 export {
   createRoom,
   getUserRooms,
@@ -250,4 +265,5 @@ export {
   deleteRoom,
   joinRoom,
   leaveRoom,
+  rotateInviteCode,
 };

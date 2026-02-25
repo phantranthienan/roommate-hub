@@ -7,6 +7,7 @@ import {
   deleteRoom,
   joinRoom,
   leaveRoom,
+  rotateInviteCode,
 } from './rooms.service.js';
 
 export const createRoomHandler = asyncHandler(
@@ -48,5 +49,12 @@ export const leaveRoomHandler = asyncHandler(
   async (req, res) => {
     const result = await leaveRoom(req.user.userId, req.params.roomId);
     sendSuccess(res, result);
+  }
+);
+
+export const rotateInviteCodeHandler = asyncHandler(
+  async (req, res) => {
+    const room = await rotateInviteCode(req.params.roomId);
+    sendSuccess(res, room);
   }
 );

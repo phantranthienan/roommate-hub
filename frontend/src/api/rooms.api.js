@@ -18,4 +18,7 @@ export const roomsApi = {
 
   leaveRoom: (roomId) =>
     apiClient.post(`/rooms/${roomId}/leave`).then((res) => res.data),
+
+  rotateInviteCode: (roomId) =>
+    apiClient.post(`/rooms/${roomId}/rotate-invite-code`).then((res) => res.data),
 };

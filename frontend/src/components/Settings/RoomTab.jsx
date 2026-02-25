@@ -3,16 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Lock } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Lock, RefreshCw } from "lucide-react";
 import { useRoomStore } from "@/stores/room.store";
-import { useUpdateRoom } from "@/hooks/useRooms";
+import { useUpdateRoom, useRotateInviteCode } from "@/hooks/useRooms";
 import { CopyButton } from "./CopyButton";
 
-export function RoomTab({ isOwnerOrAdmin }) {
+export function RoomTab({ isOwner, isOwnerOrAdmin }) {
   const room = useRoomStore((s) => s.selectedRoom);
   const [name, setName] = useState(room?.name ?? "");
   const [description, setDescription] = useState(room?.description ?? "");
   const updateRoom = useUpdateRoom();
+  const rotateInviteCode = useRotateInviteCode();
 
   useEffect(() => {
     if (room) {
@@ -32,13 +44,38 @@ export function RoomTab({ isOwnerOrAdmin }) {
     <div className="space-y-8 max-w-lg">
       <div className="space-y-2">
         <Label>Member Invite Code</Label>
-        {isOwnerOrAdmin ? (
+        {isOwner ? (
           <>
             <div className="flex items-center gap-2">
               <code className="flex-1 px-3 py-2 rounded-md bg-muted text-sm font-mono tracking-widest">
                 {room.inviteCode}
               </code>
               <CopyButton value={room.inviteCode} />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="icon" disabled={rotateInviteCode.isPending}>
+                    {rotateInviteCode.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Rotate invite code?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      The old code will stop working immediately. Anyone who hasn't joined yet will need the new code.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => rotateInviteCode.mutate()}>
+                      Rotate
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
             <p className="text-xs text-muted-foreground">
               Anyone with this code joins as an official <strong>member</strong>. Only share with trusted roommates.
@@ -47,7 +84,7 @@ export function RoomTab({ isOwnerOrAdmin }) {
         ) : (
           <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-sm text-muted-foreground">
             <Lock className="h-4 w-4 shrink-0" />
-            Only the room owner and admins can view and share the invite code.
+            Only the room owner can view and share the invite code.
           </div>
         )}
       </div>
